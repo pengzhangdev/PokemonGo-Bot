@@ -194,12 +194,13 @@ class PokemonGoBot(object):
         #     worker.work()
 
         if return_value == PokemonCatchWorker.CATCHED:
-            self.release_pokemon()
+            self.release_pokemon(pokemon)
 
         return return_value
 
-    def release_pokemon(self):
+    def release_pokemon(self, pokemon):
         worker = PokemonTransferWorker(self);
+        worker.set_pokemon(pokemon)
         return_value = worker.work()
 
         return return_value;

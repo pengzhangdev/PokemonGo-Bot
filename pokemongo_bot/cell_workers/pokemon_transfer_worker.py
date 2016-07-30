@@ -11,90 +11,110 @@ class PokemonTransferWorker(object):
         self.pokemon_list = bot.pokemon_list
         self.api = bot.api
         self.bot = bot
+        self.pokemon_id = -1
+
+    def set_pokemon(self, pokemon):
+        self.pokemon_id = pokemon["pokemon_id"]
+
+    def __release_certain_pokemon(self, pokemon_id, pokemon_groups):
+        if not pokemon_groups.has_key(pokemon_id):
+            return
+
+        group = pokemon_groups[pokemon_id]
+
+        if len(group) > 0:
+            pokemon_name = self.pokemon_list[pokemon_id - 1]['Name']
+
+            # Always match the release rule
+            group = sorted(group, key=lambda x: x['cp'], reverse=False)
+            for item in group:
+                pokemon_cp = item['cp']
+                pokemon_potential = item['iv']
+
+                # logger.log("should_release_pokemon {} cp {} iv {}".format(pokemon_name, pokemon_cp, pokemon_potential))
+                if self.should_release_pokemon(pokemon_name, pokemon_cp, pokemon_potential):
+                    self.release_pokemon(pokemon_name, item['cp'], item['iv'], item['pokemon_data']['id'])
+
+    def __keep_best_pokemon(self, pokemon_id, pokemon_groups):
+        if not pokemon_groups.has_key(pokemon_id):
+            return
+
+        group = pokemon_groups[pokemon_id]
+
+        if len(group) > 0:
+            pokemon_name = self.pokemon_list[pokemon_id - 1]['Name']
+            keep_best, keep_best_cp, keep_best_iv = self._validate_keep_best_config(pokemon_name)
+
+            # If keep best, release rest
+            if keep_best:
+                #logger.log("keep_best")
+                best_pokemon_ids = set()
+                order_criteria = 'none'
+                if keep_best_cp >= 1:
+                    cp_limit = keep_best_cp
+                    best_cp_pokemons = sorted(group, key=lambda x: (x['cp'], x['iv']), reverse=True)[:cp_limit]
+                    best_pokemon_ids = set(pokemon['pokemon_data']['id'] for pokemon in best_cp_pokemons)
+                    order_criteria = 'cp'
+
+                if keep_best_iv >= 1:
+                    iv_limit = keep_best_iv
+                    best_iv_pokemons = sorted(group, key=lambda x: (x['iv'], x['cp']), reverse=True)[:iv_limit]
+                    best_pokemon_ids |= set(pokemon['pokemon_data']['id'] for pokemon in best_iv_pokemons)
+                    if order_criteria == 'cp':
+                        order_criteria = 'cp and iv'
+                    else:
+                        order_criteria = 'iv'
+
+                # remove best pokemons from all pokemons array
+                all_pokemons = group
+                best_pokemons = []
+                for best_pokemon_id in best_pokemon_ids:
+                    for pokemon in all_pokemons:
+                        if best_pokemon_id == pokemon['pokemon_data']['id']:
+                            all_pokemons.remove(pokemon)
+                            best_pokemons.append(pokemon)
+
+                if best_pokemons and all_pokemons:
+                    logger.log("Keep {} best {}, based on {}".format(len(best_pokemons),
+                                                                     pokemon_name,
+                                                                     order_criteria), "green")
+                    for best_pokemon in best_pokemons:
+                        logger.log("{} [CP {}] [Potential {}]".format(pokemon_name,
+                                                                      best_pokemon['cp'],
+                                                                      best_pokemon['iv']), 'green')
+
+                    logger.log("Transferring {} pokemon".format(len(all_pokemons)), "green")
+
+                for pokemon in all_pokemons:
+                    self.release_pokemon(pokemon_name, pokemon['cp'], pokemon['iv'], pokemon['pokemon_data']['id'])
+
 
     def work(self):
         #logger.log("Start release pokemon")
-        pokemon_groups = self._release_pokemon_get_groups()
-        #logger.log("pokemon_groups size {}".format(len(pokemon_groups)))
-        for pokemon_id in pokemon_groups:
-            group = pokemon_groups[pokemon_id]
-
-            if len(group) > 1:
-                pokemon_name = self.pokemon_list[pokemon_id - 1]['Name']
-
-                # Always match the release rule
-                group = sorted(group, key=lambda x: x['cp'], reverse=False)
-                for item in group:
-                    # Keep last one with best cp
-                    if item == group[len(group) - 1]:
-                        break
-
-                    pokemon_cp = item['cp']
-                    pokemon_potential = item['iv']
-
-#                    logger.log("should_release_pokemon {} cp {} iv {}".format(pokemon_name, pokemon_cp, pokemon_potential))
-                    if self.should_release_pokemon(pokemon_name, pokemon_cp, pokemon_potential):
-                        self.release_pokemon(pokemon_name, item['cp'], item['iv'], item['pokemon_data']['id'])
+        if self.pokemon_id != -1:
+            pokemon_groups = self._release_pokemon_get_groups()
+            self.__release_certain_pokemon(self.pokemon_id, pokemon_groups)
+            pokemon_groups = self._release_pokemon_get_groups()
+            self.__keep_best_pokemon(self.pokemon_id, pokemon_groups)
+            #logger.log("Done release pokemon")
+            self.pokemon_id = -1
+            return
 
         pokemon_groups = self._release_pokemon_get_groups()
         for pokemon_id in pokemon_groups:
-            group = pokemon_groups[pokemon_id]
+            # if self.pokemon_id != -1 and pokemon_id != self.pokemon_id:
+            #     continue
+            self.__release_certain_pokemon(pokemon_id, pokemon_groups)
 
-            if len(group) > 1:
-                pokemon_name = self.pokemon_list[pokemon_id - 1]['Name']
-                keep_best, keep_best_cp, keep_best_iv = self._validate_keep_best_config(pokemon_name)
 
-                # If keep best, release rest
-                if keep_best:
-                    #logger.log("keep_best")
-                    best_pokemon_ids = set()
-                    order_criteria = 'none'
-                    if keep_best_cp >= 1:
-                        cp_limit = keep_best_cp
-                        best_cp_pokemons = sorted(group, key=lambda x: (x['cp'], x['iv']), reverse=True)[:cp_limit]
-                        best_pokemon_ids = set(pokemon['pokemon_data']['id'] for pokemon in best_cp_pokemons)
-                        order_criteria = 'cp'
+        pokemon_groups = self._release_pokemon_get_groups()
+        for pokemon_id in pokemon_groups:
+            #self.__release_certain_pokemon(pokemon_id, pokemon_groups)
+            self.__keep_best_pokemon(pokemon_id, pokemon_groups)
 
-                    if keep_best_iv >= 1:
-                        iv_limit = keep_best_iv
-                        best_iv_pokemons = sorted(group, key=lambda x: (x['iv'], x['cp']), reverse=True)[:iv_limit]
-                        best_pokemon_ids |= set(pokemon['pokemon_data']['id'] for pokemon in best_iv_pokemons)
-                        if order_criteria == 'cp':
-                            order_criteria = 'cp and iv'
-                        else:
-                            order_criteria = 'iv'
 
-                    # remove best pokemons from all pokemons array
-                    all_pokemons = group
-                    best_pokemons = []
-                    for best_pokemon_id in best_pokemon_ids:
-                        for pokemon in all_pokemons:
-                            if best_pokemon_id == pokemon['pokemon_data']['id']:
-                                all_pokemons.remove(pokemon)
-                                best_pokemons.append(pokemon)
-
-                    if best_pokemons and all_pokemons:
-                        logger.log("Keep {} best {}, based on {}".format(len(best_pokemons),
-                                                                         pokemon_name,
-                                                                         order_criteria), "green")
-                        for best_pokemon in best_pokemons:
-                            logger.log("{} [CP {}] [Potential {}]".format(pokemon_name,
-                                                                          best_pokemon['cp'],
-                                                                          best_pokemon['iv']), 'green')
-
-                        logger.log("Transferring {} pokemon".format(len(all_pokemons)), "green")
-
-                    for pokemon in all_pokemons:
-                        self.release_pokemon(pokemon_name, pokemon['cp'], pokemon['iv'], pokemon['pokemon_data']['id'])
-                # else:
-                    # group = sorted(group, key=lambda x: x['cp'], reverse=True)
-                    # for item in group:
-                    #     pokemon_cp = item['cp']
-                    #     pokemon_potential = item['iv']
-
-                    #     if self.should_release_pokemon(pokemon_name, pokemon_cp, pokemon_potential):
-                    #         self.release_pokemon(pokemon_name, item['cp'], item['iv'], item['pokemon_data']['id'])
         #logger.log("Done release pokemon")
+        self.pokemon_id = -1
 
     def _release_pokemon_get_groups(self):
         pokemon_groups = {}
