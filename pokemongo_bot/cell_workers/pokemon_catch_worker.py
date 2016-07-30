@@ -9,6 +9,7 @@ from pokemongo_bot import logger
 class PokemonCatchWorker(object):
     BAG_FULL = 'bag_full'
     NO_POKEBALLS = 'no_pokeballs'
+    CATCHED = "catched"
 
     def __init__(self, pokemon, bot):
         self.pokemon = pokemon
@@ -28,7 +29,7 @@ class PokemonCatchWorker(object):
         self.api.encounter(encounter_id=encounter_id, spawnpoint_id=spawnpoint_id,
                            player_latitude=player_latitude, player_longitude=player_longitude)
         response_dict = self.api.call()
-
+        catched = False
         if response_dict and 'responses' in response_dict:
             if 'ENCOUNTER' in response_dict['responses']:
                 if 'status' in response_dict['responses']['ENCOUNTER']:
@@ -154,23 +155,25 @@ class PokemonCatchWorker(object):
                                         else:
                                             logger.log(
                                             '[x] Failed to evolve {}!'.format(pokemon_name))
-
-                                    if self.should_release_pokemon(pokemon_name, cp, pokemon_potential, response_dict):
-                                        # Transfering Pokemon
-                                        pokemon_to_transfer = list(
-                                            Set(id_list2) - Set(id_list1))
-                                        if len(pokemon_to_transfer) == 0:
-                                            raise RuntimeError(
-                                                'Trying to transfer 0 pokemons!')
-                                        self.transfer_pokemon(
-                                            pokemon_to_transfer[0])
-                                        logger.log(
-                                            '[#] {} has been exchanged for candy!'.format(pokemon_name), 'green')
-                                    else:
-                                        logger.log(
-                                        '[x] Captured {}! [CP {}]'.format(pokemon_name, cp), 'green')
+                                    catched = True
+                                    # if self.should_release_pokemon(pokemon_name, cp, pokemon_potential, response_dict):
+                                    #     # Transfering Pokemon
+                                    #     pokemon_to_transfer = list(
+                                    #         Set(id_list2) - Set(id_list1))
+                                    #     if len(pokemon_to_transfer) == 0:
+                                    #         raise RuntimeError(
+                                    #             'Trying to transfer 0 pokemons!')
+                                    #     self.transfer_pokemon(
+                                    #         pokemon_to_transfer[0])
+                                    #     logger.log(
+                                    #         '[#] {} has been exchanged for candy!'.format(pokemon_name), 'green')
+                                    # else:
+                                    #     logger.log(
+                                    #     '[x] Captured {}! [CP {}]'.format(pokemon_name, cp), 'green')
                             break
         time.sleep(5)
+        if catched :
+            return PokemonCatchWorker.CATCHED
 
     def _transfer_low_cp_pokemon(self, value):
         self.api.get_inventory()

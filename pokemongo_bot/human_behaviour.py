@@ -2,13 +2,19 @@
 
 import time
 from math import ceil
-from random import random, randint
+from random import random, randint, uniform
 
 
 def sleep(seconds, delta=0.3):
     jitter = ceil(delta * seconds)
     sleep_time = randint(int(seconds - jitter), int(seconds + jitter))
     time.sleep(sleep_time)
+
+def action_delay(low, high):
+    # Waits for random number of seconds between low & high numbers
+    longNum = uniform(low, high)
+    shortNum = float("{0:.2f}".format(longNum))
+    time.sleep(shortNum)
 
 
 def random_lat_long_delta():

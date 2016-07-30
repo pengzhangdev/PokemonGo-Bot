@@ -11,7 +11,7 @@ import yaml
 import logger
 import re
 from pgoapi import PGoApi
-from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker
+from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker
 from cell_workers.utils import distance
 from human_behaviour import sleep
 from stepper import Stepper
@@ -178,9 +178,9 @@ class PokemonGoBot(object):
 
         self.get_player_info()
 
-        if self.config.initial_transfer:
-            worker = InitialTransferWorker(self)
-            worker.work()
+        # if self.config.initial_transfer:
+        #     worker = InitialTransferWorker(self)
+        #     worker.work()
 
         logger.log('[#]')
         self.update_inventory()
@@ -189,11 +189,20 @@ class PokemonGoBot(object):
         worker = PokemonCatchWorker(pokemon, self)
         return_value = worker.work()
 
-        if return_value == PokemonCatchWorker.BAG_FULL:
-            worker = InitialTransferWorker(self)
-            worker.work()
+        # if return_value == PokemonCatchWorker.BAG_FULL:
+        #     worker = InitialTransferWorker(self)
+        #     worker.work()
+
+        if return_value == PokemonCatchWorker.CATCHED:
+            self.release_pokemon()
 
         return return_value
+
+    def release_pokemon(self):
+        worker = PokemonTransferWorker(self);
+        return_value = worker.work()
+
+        return return_value;
 
     def drop_item(self, item_id, count):
         self.api.recycle_inventory_item(item_id=item_id, count=count)
