@@ -22,27 +22,46 @@ class PokemonCatchWorker(object):
         self.inventory = bot.inventory
 
     def work(self):
+        logger.log("pokemon {}".format(self.pokemon))
         encounter_id = self.pokemon['encounter_id']
-        spawnpoint_id = self.pokemon['spawnpoint_id']
         player_latitude = self.pokemon['latitude']
         player_longitude = self.pokemon['longitude']
-        self.api.encounter(encounter_id=encounter_id, spawnpoint_id=spawnpoint_id,
-                           player_latitude=player_latitude, player_longitude=player_longitude)
+        response_key = ''
+        response_status_key = ''
+        spawn_point_id = ''
+        spawn_point_guid = ''
+        if 'spawn_point_id' in self.pokemon:
+            spawn_point_id = self.pokemon['spawn_point_id']
+            spawn_point_guid = spawn_point_id
+            response_key = 'ENCOUNTER'
+            response_status_key = 'status'
+            self.api.encounter(encounter_id=encounter_id, spawn_point_id=spawn_point_id,
+                               player_latitude=player_latitude, player_longitude=player_longitude)
+        else:
+            fort_id = self.pokemon['fort_id']
+            spawn_point_guid = fort_id
+            response_key = 'DISK_ENCOUNTER'
+            response_status_key = 'result'
+            self.api.disk_encounter(encounter_id=encounter_id, fort_id=fort_id,
+                                    player_latitude=player_latitude, player_longitude=player_longitude)
+
         response_dict = self.api.call()
         catched = False
         if response_dict and 'responses' in response_dict:
-            if 'ENCOUNTER' in response_dict['responses']:
-                if 'status' in response_dict['responses']['ENCOUNTER']:
-                    if response_dict['responses']['ENCOUNTER']['status'] is 7:
-                        logger.log('[x] Pokemon Bag is full!', 'red')
-                        return PokemonCatchWorker.BAG_FULL
-
-                    if response_dict['responses']['ENCOUNTER']['status'] is 1:
+            if response_key in response_dict['responses']:
+                if response_status_key in response_dict['responses'][response_key]:
+                    if response_dict['responses'][response_key][response_status_key] is 1:
                         cp = 0
                         total_IV = 0
-                        if 'wild_pokemon' in response_dict['responses']['ENCOUNTER']:
-                            pokemon = response_dict['responses']['ENCOUNTER']['wild_pokemon']
-                            catch_rate = response_dict['responses']['ENCOUNTER']['capture_probability']['capture_probability'] # 0 = pokeballs, 1 great balls, 3 ultra balls
+                        if 'wild_pokemon' in response_dict['responses'][response_key] or 'pokemon_data' in \
+                                response_dict['responses'][response_key]:
+                            if response_key == 'ENCOUNTER':
+                                pokemon = response_dict['responses'][response_key]['wild_pokemon']
+                            else:
+                                pokemon = response_dict['responses'][response_key]
+
+                            catch_rate = response_dict['responses'][response_key]['capture_probability'][
+                                'capture_probability'] # 0 = pokeballs, 1 great balls, 3 ultra balls
 
                             if 'pokemon_data' in pokemon and 'cp' in pokemon['pokemon_data']:
                                 cp = pokemon['pokemon_data']['cp']
@@ -113,7 +132,7 @@ class PokemonCatchWorker(object):
                             self.api.catch_pokemon(encounter_id=encounter_id,
                                                    pokeball=pokeball,
                                                    normalized_reticle_size=1.950,
-                                                   spawn_point_guid=spawnpoint_id,
+                                                   spawn_point_id=spawn_point_guid,
                                                    hit_pokemon=1,
                                                    spin_modifier=1,
                                                    NormalizedHitPosition=1)

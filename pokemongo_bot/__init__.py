@@ -45,8 +45,8 @@ class PokemonGoBot(object):
             self.config.evolve_all = []
 
         # incubate eggs
-        # worker = IncubateEggsWorker(self)
-        # worker.work()
+        worker = IncubateEggsWorker(self)
+        worker.work()
 
         self._filter_ignored_pokemons(cell)
 

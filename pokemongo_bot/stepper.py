@@ -64,21 +64,21 @@ class Stepper(object):
 
     def _walk_to(self, speed, lat, lng, alt):
         dist = distance(
-            i2f(self.api._position_lat), i2f(self.api._position_lng), lat, lng)
+            self.api._position_lat, self.api._position_lng, lat, lng)
         steps = (dist + 0.0) / (speed + 0.0)  # may be rational number
         intSteps = int(steps)
         residuum = steps - intSteps
-        logger.log('[#] Walking from ' + str((i2f(self.api._position_lat), i2f(
-            self.api._position_lng))) + " to " + str(str((lat, lng))) +
+        logger.log('[#] Walking from ' + str((self.api._position_lat, 
+                                              self.api._position_lng)) + " to " + str(str((lat, lng))) +
                    " for approx. " + str(format_time(ceil(steps))))
         if steps != 0:
-            dLat = (lat - i2f(self.api._position_lat)) / steps
-            dLng = (lng - i2f(self.api._position_lng)) / steps
+            dLat = (lat - self.api._position_lat) / steps
+            dLng = (lng - self.api._position_lng) / steps
 
             for i in range(intSteps):
-                cLat = i2f(self.api._position_lat) + \
+                cLat = self.api._position_lat + \
                     dLat + random_lat_long_delta()
-                cLng = i2f(self.api._position_lng) + \
+                cLng = self.api._position_lng + \
                     dLng + random_lat_long_delta()
                 self.api.set_position(cLat, cLng, alt)
                 self.bot.heartbeat()
@@ -87,8 +87,8 @@ class Stepper(object):
                     continue;
 
                 self._work_at_position(
-                    i2f(self.api._position_lat), i2f(self.api._position_lng),
-                    alt, False)
+                    self.api._position_lat, self.api._position_lng,
+                alt, False)
 
             self.api.set_position(lat, lng, alt)
             self.bot.heartbeat()
