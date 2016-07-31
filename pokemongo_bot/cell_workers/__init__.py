@@ -6,3 +6,4 @@ from move_to_fort_worker import MoveToFortWorker
 from initial_transfer_worker import InitialTransferWorker
 from evolve_all_worker import EvolveAllWorker
 from pokemon_transfer_worker import PokemonTransferWorker
+from incubate_eggs_worker import IncubateEggsWorker

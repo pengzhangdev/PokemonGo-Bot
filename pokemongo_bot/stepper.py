@@ -83,6 +83,9 @@ class Stepper(object):
                 self.api.set_position(cLat, cLng, alt)
                 self.bot.heartbeat()
                 sleep(1)  # sleep one second plus a random delta
+                if i != intSteps - 1 and i % 3 != 0:
+                    continue;
+
                 self._work_at_position(
                     i2f(self.api._position_lat), i2f(self.api._position_lng),
                     alt, False)

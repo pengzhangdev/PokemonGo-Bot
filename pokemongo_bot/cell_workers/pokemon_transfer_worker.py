@@ -34,6 +34,12 @@ class PokemonTransferWorker(object):
                 # logger.log("should_release_pokemon {} cp {} iv {}".format(pokemon_name, pokemon_cp, pokemon_potential))
                 if self.should_release_pokemon(pokemon_name, pokemon_cp, pokemon_potential):
                     self.release_pokemon(pokemon_name, item['cp'], item['iv'], item['pokemon_data']['id'])
+                    pokemon_groups[pokemon_id].remove(item)
+
+            if len(pokemon_groups[pokemon_id]) == 0:
+                del pokemon_groups[pokemon_id]
+
+        return pokemon_groups
 
     def __keep_best_pokemon(self, pokemon_id, pokemon_groups):
         if not pokemon_groups.has_key(pokemon_id):
@@ -93,8 +99,8 @@ class PokemonTransferWorker(object):
         #logger.log("Start release pokemon")
         if self.pokemon_id != -1:
             pokemon_groups = self._release_pokemon_get_groups()
-            self.__release_certain_pokemon(self.pokemon_id, pokemon_groups)
-            pokemon_groups = self._release_pokemon_get_groups()
+            pokemon_groups = self.__release_certain_pokemon(self.pokemon_id, pokemon_groups)
+            #pokemon_groups = self._release_pokemon_get_groups()
             self.__keep_best_pokemon(self.pokemon_id, pokemon_groups)
             #logger.log("Done release pokemon")
             self.pokemon_id = -1

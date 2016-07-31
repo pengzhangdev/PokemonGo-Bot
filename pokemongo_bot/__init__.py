@@ -11,7 +11,7 @@ import yaml
 import logger
 import re
 from pgoapi import PGoApi
-from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker
+from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker, IncubateEggsWorker
 from cell_workers.utils import distance
 from human_behaviour import sleep
 from stepper import Stepper
@@ -25,6 +25,7 @@ class PokemonGoBot(object):
         self.config = config
         self.pokemon_list = json.load(open('data/pokemon.json'))
         self.item_list = json.load(open('data/items.json'))
+        self.latest_inventory = None
 
     def start(self):
         self._setup_logging()
@@ -42,6 +43,10 @@ class PokemonGoBot(object):
             worker = EvolveAllWorker(self)
             worker.work()
             self.config.evolve_all = []
+
+        # incubate eggs
+        # worker = IncubateEggsWorker(self)
+        # worker.work()
 
         self._filter_ignored_pokemons(cell)
 
@@ -403,6 +408,13 @@ class PokemonGoBot(object):
         self.api.get_inventory()
         self.api.check_awarded_badges()
         self.api.call()
+
+    def get_inventory(self):
+        if self.latest_inventory is None:
+            self.api.get_inventory()
+            response = self.api.call()
+            self.latest_inventory = response
+        return self.latest_inventory
 
     def get_inventory_count(self, what):
         self.api.get_inventory()
