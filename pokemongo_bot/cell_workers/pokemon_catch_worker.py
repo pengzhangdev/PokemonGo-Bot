@@ -91,21 +91,44 @@ class PokemonCatchWorker(object):
                                 # Simulate app
                                 sleep(3)
 
-                        balls_stock = self.bot.pokeball_inventory()
+                        items_stock = self.bot.current_inventory()
+                        berry_id = 701
+                        berries_count = self.bot.item_inventory_count(berry_id)
                         while(True):
 
                             pokeball = 1 # default:poke ball
+                            berry_used = False
 
-                            if balls_stock[1] <= 0: # if poke ball are out of stock
-                                if balls_stock[2] > 0: # and player has great balls in stock...
+                            # we have enough berry, and the great ball chance is < 0.45, using berry
+                            if catch_rate[pokeball] < 0.45 and items_stock[pokeball+1]+30 < berries_count:
+                                success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
+                                logger.log('Catch Rate with normal Pokeball is low ({}%). Thinking to throw a {}... ({} left!)'.format(success_percentage,self.item_list[str(berry_id)],berries_count-1))
+                                self.api.use_item_capture(item_id = berry_id,encounter_id = encounter_id,spawn_point_id = spawn_point_guid)
+                                response_dict = self.api.call()
+                                if response_dict and response_dict['status_code'] is 1 and 'item_capture_mult' in response_dict['responses']['USE_ITEM_CAPTURE']:
+                                    for i in range(len(catch_rate)):
+                                        if 'item_capture_mult' in response_dict['responses']['USE_ITEM_CAPTURE']:
+                                            catch_rate[i] = catch_rate[i] * response_dict['responses']['USE_ITEM_CAPTURE']['item_capture_mult']
+                                    success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
+                                    berries_count = berries_count -1
+                                    berry_used = True
+                                    logger.log('Threw a berry! Catch Rate with normal Pokeball has increased to {}%'.format(success_percentage))
+                                else:
+                                    if response_dict['status_code'] is 1:
+                                        logger.log('Fail to use berry. Seem like you are softbanned.', 'red')
+                                    else:
+                                        logger.log('Fail to use berry. Status Code: {}'.format(response_dict['status_code']),'red')
+
+                            if items_stock[1] <= 0: # if poke ball are out of stock
+                                if items_stock[2] > 0: # and player has great balls in stock...
                                     pokeball = 2 # then use great balls
-                                elif balls_stock[3] > 0: # or if great balls are out of stock too, and player has ultra balls...
+                                elif items_stock[3] > 0: # or if great balls are out of stock too, and player has ultra balls...
                                     pokeball = 3 # then use ultra balls
                                 else:
                                     pokeball = 0 # player doesn't have any of pokeballs, great balls or ultra balls
 
                             while(pokeball < 3):
-                                if catch_rate[pokeball-1] < 0.35 and balls_stock[pokeball+1] > 0:
+                                if catch_rate[pokeball-1] < 0.35 and items_stock[pokeball+1] > 0:
                                     # if current ball chance to catch is under 35%, and player has better ball - then use it
                                     pokeball = pokeball+1 # use better ball
                                 else:
@@ -120,12 +143,12 @@ class PokemonCatchWorker(object):
                                 self.config.mode = 'farm'
                                 return PokemonCatchWorker.NO_POKEBALLS
 
-                            balls_stock[pokeball] = balls_stock[pokeball] - 1
+                            items_stock[pokeball] = items_stock[pokeball] - 1
                             success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
                             logger.log('[x] Using {} (chance: {}%)... ({} left!)'.format(
                                 self.item_list[str(pokeball)], 
                                 success_percentage, 
-                                balls_stock[pokeball]
+                                items_stock[pokeball]
                             ))
 
                             id_list1 = self.count_pokemon_inventory()

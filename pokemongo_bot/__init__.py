@@ -161,7 +161,7 @@ class PokemonGoBot(object):
 
         pokecoins = '0'
         stardust = '0'
-        balls_stock = self.pokeball_inventory()
+        items_stock = self.current_inventory()
 
         if 'amount' in player['currencies'][0]:
             pokecoins = player['currencies'][0]['amount']
@@ -177,9 +177,9 @@ class PokemonGoBot(object):
                 'max_pokemon_storage']))
         logger.log('[#] Stardust: {}'.format(stardust))
         logger.log('[#] Pokecoins: {}'.format(pokecoins))
-        logger.log('[#] PokeBalls: ' + str(balls_stock[1]))
-        logger.log('[#] GreatBalls: ' + str(balls_stock[2]))
-        logger.log('[#] UltraBalls: ' + str(balls_stock[3]))
+        logger.log('[#] PokeBalls: ' + str(items_stock[1]))
+        logger.log('[#] GreatBalls: ' + str(items_stock[2]))
+        logger.log('[#] UltraBalls: ' + str(items_stock[3]))
 
         self.get_player_info()
 
@@ -242,7 +242,7 @@ class PokemonGoBot(object):
                             self.inventory.append(item['inventory_item_data'][
                                 'item'])
 
-    def pokeball_inventory(self):
+    def current_inventory(self):
         self.api.get_player().get_inventory()
 
         inventory_req = self.api.call()
@@ -253,9 +253,9 @@ class PokemonGoBot(object):
         with open(user_web_inventory, 'w') as outfile:
             json.dump(inventory_dict, outfile)
 
-        # get player balls stock
+        # get player items stock
         # ----------------------
-        balls_stock = {1: 0, 2: 0, 3: 0, 4: 0}
+        items_stock = {x.value: 0 for x in list(Item)}
 
         for item in inventory_dict:
             try:
@@ -263,18 +263,11 @@ class PokemonGoBot(object):
                 item_id = item['inventory_item_data']['item']['item_id']
                 item_count = item['inventory_item_data']['item']['count']
 
-                if item_id == Item.ITEM_POKE_BALL.value:
-                    # print('Poke Ball count: ' + str(item_count))
-                    balls_stock[1] = item_count
-                if item_id == Item.ITEM_GREAT_BALL.value:
-                    # print('Great Ball count: ' + str(item_count))
-                    balls_stock[2] = item_count
-                if item_id == Item.ITEM_ULTRA_BALL.value:
-                    # print('Ultra Ball count: ' + str(item_count))
-                    balls_stock[3] = item_count
+                if item_id in items_stock:
+                    items_stock[item_id] = item_count
             except:
                 continue
-        return balls_stock
+        return items_stock
 
     def item_inventory_count(self, id):
         self.api.get_player().get_inventory()
