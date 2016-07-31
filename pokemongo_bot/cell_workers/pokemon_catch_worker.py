@@ -100,8 +100,14 @@ class PokemonCatchWorker(object):
                             pokeball = 1 # default:poke ball
                             berry_used = False
 
-                            # we have enough berry, and the great ball chance is < 0.45, using berry
-                            if (catch_rate[pokeball] < 0.45 and items_stock[pokeball+1]+30 < berries_count) or (catch_failed and berries_count > 0):
+                            # 1. we have enough berry, and the great ball chance is < 0.45, using berry
+                            # 2. catch failed and we have more than 30 berries
+                            # 3. The IV of pm > 0.8 and berries_count > 0
+                            # 4. The CP of pm > 2000 and berries_count > 0
+                            if (catch_rate[pokeball] < 0.45 and items_stock[pokeball+1]+30 < berries_count) \
+                               or (catch_failed and berries_count > 30) \
+                               or (pokemon_potential >= 0.8 and berries_count > 0) \
+                               or (cp >= 1600 and berries_count > 0):
                                 success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
                                 logger.log('Catch Rate with normal Pokeball is low ({}%). Thinking to throw a {}... ({} left!)'.format(success_percentage,self.item_list[str(berry_id)],berries_count-1))
                                 self.api.use_item_capture(item_id = berry_id,encounter_id = encounter_id,spawn_point_id = spawn_point_guid)
