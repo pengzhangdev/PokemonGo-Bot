@@ -94,13 +94,14 @@ class PokemonCatchWorker(object):
                         items_stock = self.bot.current_inventory()
                         berry_id = 701
                         berries_count = self.bot.item_inventory_count(berry_id)
+                        catch_failed = False
                         while(True):
 
                             pokeball = 1 # default:poke ball
                             berry_used = False
 
                             # we have enough berry, and the great ball chance is < 0.45, using berry
-                            if catch_rate[pokeball] < 0.45 and items_stock[pokeball+1]+30 < berries_count:
+                            if (catch_rate[pokeball] < 0.45 and items_stock[pokeball+1]+30 < berries_count) or catch_failed:
                                 success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
                                 logger.log('Catch Rate with normal Pokeball is low ({}%). Thinking to throw a {}... ({} left!)'.format(success_percentage,self.item_list[str(berry_id)],berries_count-1))
                                 self.api.use_item_capture(item_id = berry_id,encounter_id = encounter_id,spawn_point_id = spawn_point_guid)
@@ -170,6 +171,7 @@ class PokemonCatchWorker(object):
                                 if status is 2:
                                     logger.log(
                                         '[-] Attempted to capture {}- failed.. trying again!'.format(pokemon_name), 'red')
+                                    catch_failed = True
                                     sleep(2)
                                     continue
                                 if status is 3:
