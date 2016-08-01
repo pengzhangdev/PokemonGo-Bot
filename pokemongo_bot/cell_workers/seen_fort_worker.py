@@ -10,6 +10,7 @@ from pokemongo_bot import logger
 
 
 class SeenFortWorker(object):
+    ITEM_LIMITS = {}            # [{count,limits,drop},...]
     def __init__(self, fort, bot):
         self.fort = fort
         self.api = bot.api
@@ -19,6 +20,23 @@ class SeenFortWorker(object):
         self.item_list = bot.item_list
         self.rest_time = 50
         self.stepper = bot.stepper
+
+        if len(SeenFortWorker.ITEM_LIMITS) == 0:
+            for key in self.item_list.keys():
+                count = self.bot.item_inventory_count(key)
+                limits = 200
+                drop = False
+                if key == '101': # Potion
+                    limits = 0;
+                    drop = True
+                if key == '102': # Super Potion
+                    limits = 20
+                if key == '103': # Hyper Potion
+                    limits = 30
+                if key == '201': # Revive
+                    limits = 20
+                SeenFortWorker.ITEM_LIMITS[key] = [count, limits, drop]
+            logger.log("ITEM_LIMITS: {}".format(SeenFortWorker.ITEM_LIMITS))
 
     def work(self):
         lat = self.fort['latitude']
@@ -73,9 +91,10 @@ class SeenFortWorker(object):
                         logger.log("[+] " + str(item_count) +
                                     "x " + item_name +
                                     " (Total: " + str(self.bot.item_inventory_count(item_id)) + ")", 'green')
+                        self.addItemCount(str(item_id), item_count)
 
                         # RECYCLING UNWANTED ITEMS
-                        if str(item_id) in self.config.item_filter:
+                        if SeenFortWorker.ITEM_LIMITS[str(item_id)][2]:  #in self.config.item_filter:
                             logger.log("[+] Recycling " + str(item_count) + "x " + item_name + "...", 'green')
                             #RECYCLE_INVENTORY_ITEM
                             response_dict_recycle = self.bot.drop_item(item_id=item_id, count=item_count)
@@ -133,6 +152,13 @@ class SeenFortWorker(object):
                 return 11
         sleep(8)
         return 0
+
+    def addItemCount(self, item_id, item_count):
+        if SeenFortWorker.ITEM_LIMITS[item_id][2]:
+            return
+        SeenFortWorker.ITEM_LIMITS[item_id][0] += item_count
+        if SeenFortWorker.ITEM_LIMITS[item_id][0] > SeenFortWorker.ITEM_LIMITS[1]:
+            SeenFortWorker.ITEM_LIMITS[item_id][2] = True
 
     @staticmethod
     def closest_fort(current_lat, current_long, forts):
