@@ -44,10 +44,6 @@ class PokemonGoBot(object):
             worker.work()
             self.config.evolve_all = []
 
-        # incubate eggs
-        worker = IncubateEggsWorker(self)
-        worker.work()
-
         self._filter_ignored_pokemons(cell)
 
         if (self.config.mode == "all" or self.config.mode ==
@@ -99,6 +95,10 @@ class PokemonGoBot(object):
 
                     worker = SeenFortWorker(fort, self)
                     hack_chain = worker.work()
+                    # incubate eggs after fort
+                    # because we will update the invent after fort
+                    worker = IncubateEggsWorker(self)
+                    worker.work()
                     if hack_chain > 10:
                         #print('need a rest')
                         break
