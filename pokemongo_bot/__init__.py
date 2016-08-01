@@ -190,6 +190,9 @@ class PokemonGoBot(object):
         logger.log('[#]')
         self.update_inventory()
 
+        worker = PokemonTransferWorker(self);
+        worker.work()
+
     def catch_pokemon(self, pokemon):
         worker = PokemonCatchWorker(pokemon, self)
         return_value = worker.work()

@@ -36,9 +36,6 @@ class PokemonTransferWorker(object):
                     self.release_pokemon(pokemon_name, item['cp'], item['iv'], item['pokemon_data']['id'])
                     pokemon_groups[pokemon_id].remove(item)
 
-            if len(pokemon_groups[pokemon_id]) == 0:
-                del pokemon_groups[pokemon_id]
-
         return pokemon_groups
 
     def __keep_best_pokemon(self, pokemon_id, pokemon_groups):
@@ -74,6 +71,7 @@ class PokemonTransferWorker(object):
                 # remove best pokemons from all pokemons array
                 all_pokemons = group
                 best_pokemons = []
+                #logger.log("all_pokemons {}".format(all_pokemons))
                 for best_pokemon_id in best_pokemon_ids:
                     for pokemon in all_pokemons:
                         if best_pokemon_id == pokemon['pokemon_data']['id']:
@@ -91,6 +89,7 @@ class PokemonTransferWorker(object):
 
                     logger.log("Transferring {} pokemon".format(len(all_pokemons)), "green")
 
+                #logger.log("release all_pokemons {}".format(all_pokemons))
                 for pokemon in all_pokemons:
                     self.release_pokemon(pokemon_name, pokemon['cp'], pokemon['iv'], pokemon['pokemon_data']['id'])
 
