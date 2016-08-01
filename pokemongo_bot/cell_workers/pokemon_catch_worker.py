@@ -143,6 +143,9 @@ class PokemonCatchWorker(object):
 
                             # @TODO, use the best ball in stock to catch VIP (Very Important Pokemon: Configurable)
 
+                            if items_stock[1] + items_stock[2] + items_stock[3] < 40:
+                                self.config.mode = "all"
+
                             if pokeball is 0:
                                 logger.log(
                                     '[x] Out of pokeballs, switching to farming mode...', 'red')
