@@ -68,7 +68,7 @@ class Stepper(object):
         steps = (dist + 0.0) / (speed + 0.0)  # may be rational number
         intSteps = int(steps)
         residuum = steps - intSteps
-        logger.log('[#] Walking from ' + str((self.api._position_lat, 
+        logger.log('[#] Walking from ' + str((self.api._position_lat,
                                               self.api._position_lng)) + " to " + str(str((lat, lng))) +
                    " for approx. " + str(format_time(ceil(steps))))
         if steps != 0:
@@ -83,8 +83,8 @@ class Stepper(object):
                 self.api.set_position(cLat, cLng, alt)
                 self.bot.heartbeat()
                 sleep(1)  # sleep one second plus a random delta
-                if i != intSteps - 1 and i % 3 != 0:
-                    continue;
+                #if i != intSteps - 1 and i % 3 != 0:
+                #    continue;
 
                 self._work_at_position(
                     self.api._position_lat, self.api._position_lng,
