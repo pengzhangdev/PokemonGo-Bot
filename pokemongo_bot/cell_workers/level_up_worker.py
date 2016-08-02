@@ -1,12 +1,11 @@
 from pokemongo_bot import logger
 
 class CollectLevelUpReward(object):
-    current_level = 0
     previous_level = 0
 
     def __init__(self, bot):
-        #self.current_level = self._get_current_level()
-        self.previous_level = 0
+        self.current_level = self._get_current_level()
+        #self.previous_level = 0
         self.bot = bot
 
     def work(self):
@@ -14,14 +13,14 @@ class CollectLevelUpReward(object):
 
         # let's check level reward on bot initialization
         # to be able get rewards for old bots
-        if self.previous_level == 0:
+        if CollectLevelUpReward.previous_level == 0:
             self._collect_level_reward()
         # level up situation
-        elif self.current_level > self.previous_level:
-            logger.log('Level up from {} to {}!'.format(self.previous_level, self.current_level), 'green')
+        elif self.current_level > CollectLevelUpReward.previous_level:
+            logger.log('Level up from {} to {}!'.format(CollectLevelUpReward.previous_level, self.current_level), 'green')
             self._collect_level_reward()
 
-        self.previous_level = self.current_level
+        CollectLevelUpReward.previous_level = self.current_level
 
     def _collect_level_reward(self):
         self.bot.api.level_up_rewards(level=self.current_level)

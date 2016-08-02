@@ -11,7 +11,7 @@ import yaml
 import logger
 import re
 from pgoapi import PGoApi
-from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker, IncubateEggsWorker
+from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker, IncubateEggsWorker, CollectLevelUpReward
 from cell_workers.utils import distance
 from human_behaviour import sleep
 from stepper import Stepper
@@ -98,6 +98,9 @@ class PokemonGoBot(object):
                     # incubate eggs after fort
                     # because we will update the invent after fort
                     worker = IncubateEggsWorker(self)
+                    worker.work()
+                    # check level
+                    worker = CollectLevelUpReward(self)
                     worker.work()
                     if hack_chain > 10:
                         #print('need a rest')
