@@ -23,7 +23,7 @@ class SeenFortWorker(object):
 
         if len(SeenFortWorker.ITEM_LIMITS) == 0:
             for key in self.item_list.keys():
-                count = self.bot.item_inventory_count(key)
+                count = -1 #self.bot.item_inventory_count(key)
                 limits = 200
                 drop = False
                 if key == '101': # Potion
@@ -154,10 +154,12 @@ class SeenFortWorker(object):
         return 0
 
     def addItemCount(self, item_id, item_count):
+        if SeenFortWorker.ITEM_LIMITS[item_id][0] == -1:
+            SeenFortWorker.ITEM_LIMITS[item_id][0] = self.bot.item_inventory_count(item_id)
         if SeenFortWorker.ITEM_LIMITS[item_id][2]:
             return
         SeenFortWorker.ITEM_LIMITS[item_id][0] += item_count
-        if SeenFortWorker.ITEM_LIMITS[item_id][0] > SeenFortWorker.ITEM_LIMITS[1]:
+        if SeenFortWorker.ITEM_LIMITS[item_id][0] > SeenFortWorker.ITEM_LIMITS[item_id][1]:
             SeenFortWorker.ITEM_LIMITS[item_id][2] = True
 
     @staticmethod
