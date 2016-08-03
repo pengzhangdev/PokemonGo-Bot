@@ -8,3 +8,4 @@ from evolve_all_worker import EvolveAllWorker
 from pokemon_transfer_worker import PokemonTransferWorker
 from incubate_eggs_worker import IncubateEggsWorker
 from level_up_worker import CollectLevelUpReward
+from nickname_worker import NicknamePokemon

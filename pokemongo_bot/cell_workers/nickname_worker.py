@@ -52,15 +52,20 @@ class NicknamePokemon(object):
             return
         try:
             new_name = '{}_{}'.format(name, iv_pct)
-            logger.log("new_name {}".format(new_name))
         except KeyError as bad_key:
             logger.log("Unable to nickname {} due to bad template ({})".format(name,bad_key),log_color)
         if pokemon.get('nickname', "") == new_name:
             return
-        response = self.bot.api.nickname_pokemon(pokemon_id=instance_id,nickname=new_name)
+
+        if len(new_name) > 12:
+            logger.log("Nickname {} too long".format(new_name))
+            return
+
+        self.bot.api.nickname_pokemon(pokemon_id=instance_id,nickname=new_name)
+        response = self.bot.api.call()
         sleep(1.2)
         try:
-            logger.log("response {}".format(response))
+            #logger.log("response {}".format(response))
             result =  reduce(dict.__getitem__, ["responses", "NICKNAME_POKEMON"], response)
         except KeyError:
             logger.log("Attempt to nickname received bad response from server.",log_color)

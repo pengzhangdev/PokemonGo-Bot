@@ -108,6 +108,13 @@ def init_config():
         "Transfer all duplicate pokemon with same ID on bot start, except pokemon with highest CP. Accepts a number to prevent transferring pokemon with a CP above the provided value.  Default is 0 (aka transfer none).",
         type=int,
         default=0)
+    parser.add_argument(
+        "-nn",
+        "--nickname",
+        help=
+        "Ends the name with _{iv}*100",
+        type=int,
+        default=0)
     parser.add_argument("-d",
                         "--debug",
                         help="Debug Mode",
@@ -174,7 +181,7 @@ def init_config():
             config.release_config.update(json.load(data))
 
     # create web dir if not exists
-    try: 
+    try:
         os.makedirs(web_dir)
     except OSError:
         if not os.path.isdir(web_dir):

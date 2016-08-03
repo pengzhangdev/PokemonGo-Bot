@@ -11,7 +11,7 @@ import yaml
 import logger
 import re
 from pgoapi import PGoApi
-from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker, IncubateEggsWorker, CollectLevelUpReward
+from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker, IncubateEggsWorker, CollectLevelUpReward,NicknamePokemon
 from cell_workers.utils import distance
 from human_behaviour import sleep
 from stepper import Stepper
@@ -193,8 +193,16 @@ class PokemonGoBot(object):
         logger.log('[#]')
         self.update_inventory()
 
-        worker = PokemonTransferWorker(self);
-        worker.work()
+        if self.config.initial_transfer:
+            logger.log("[#] start to transfter the pokemons with release rules")
+            worker = PokemonTransferWorker(self);
+            worker.work()
+            logger.log("[#] done transfter the pokemons")
+        if self.config.nickname:
+            logger.log("[#] start to nickname the pokemons with the IV info")
+            worker = NicknamePokemon(self)
+            worker.work()
+            logger.log("[#] done nickname the pokemons")
 
     def catch_pokemon(self, pokemon):
         worker = PokemonCatchWorker(pokemon, self)
