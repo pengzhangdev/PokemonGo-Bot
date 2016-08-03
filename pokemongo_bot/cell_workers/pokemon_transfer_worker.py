@@ -46,7 +46,7 @@ class PokemonTransferWorker(object):
 
         if len(group) > 0:
             pokemon_name = self.pokemon_list[pokemon_id - 1]['Name']
-            keep_best, keep_best_cp, keep_best_iv = self._validate_keep_best_config(pokemon_name)
+            keep_best, keep_best_cp, keep_best_iv, keep_best_cpiv = self._validate_keep_best_config(pokemon_name)
 
             # If keep best, release rest
             if keep_best:
@@ -67,6 +67,12 @@ class PokemonTransferWorker(object):
                         order_criteria = 'cp and iv'
                     else:
                         order_criteria = 'iv'
+
+                if keep_best_cpiv >= 1:
+                    cpiv_limit = keep_best_cpiv
+                    best_cpiv_pokemons = sorted(group, key=lambda x: x['cp'] * x['iv'], reverse = True)[:cpiv_limit]
+                    best_pokemon_ids |= set(pokemon['pokemon_data']['id'] for pokemon in best_cpiv_pokemons)
+                    order_criteria == 'cp and iv'
 
                 # remove best pokemons from all pokemons array
                 all_pokemons = group
@@ -238,6 +244,7 @@ class PokemonTransferWorker(object):
 
         keep_best_cp = release_config.get('keep_best_cp', 0)
         keep_best_iv = release_config.get('keep_best_iv', 0)
+        keep_best_cpiv = release_config.get('keep_best_cpiv', 0)
 
         if keep_best_cp or keep_best_iv:
             keep_best = True
@@ -251,11 +258,16 @@ class PokemonTransferWorker(object):
             except ValueError:
                 keep_best_iv = 0
 
-            if keep_best_cp < 0 or keep_best_iv < 0:
+            try:
+                keep_best_cpiv = int(keep_best_cpiv)
+            except ValueError:
+                keep_best_cpiv = 0
+
+            if keep_best_cp < 0 or keep_best_iv < 0 or keep_best_cpiv < 0:
                 logger.log("Keep best can't be < 0. Ignore it.", "red")
                 keep_best = False
 
-            if keep_best_cp == 0 and keep_best_iv == 0:
+            if keep_best_cp == 0 and keep_best_iv == 0 and keep_best_cpiv == 0:
                 keep_best = False
 
-        return keep_best, keep_best_cp, keep_best_iv
+        return keep_best, keep_best_cp, keep_best_iv, keep_best_cpiv
