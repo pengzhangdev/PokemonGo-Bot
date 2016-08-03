@@ -4,9 +4,9 @@ class CollectLevelUpReward(object):
     previous_level = 0
 
     def __init__(self, bot):
-        self.current_level = self._get_current_level()
-        #self.previous_level = 0
         self.bot = bot
+        self.current_level = 0# self._get_current_level()
+        #self.previous_level = 0
 
     def work(self):
         self.current_level = self._get_current_level()
