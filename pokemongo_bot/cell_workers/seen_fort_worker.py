@@ -42,10 +42,10 @@ class SeenFortWorker(object):
         lat = self.fort['latitude']
         lng = self.fort['longitude']
 
-        self.api.fort_details(fort_id=self.fort['id'],
-                              latitude=lat,
-                              longitude=lng)
-        response_dict = self.api.call()
+        response_dict = self.api.fort_details(fort_id=self.fort['id'],
+                                              latitude=lat,
+                                              longitude=lng)
+        #response_dict = self.api.call()
         if 'responses' in response_dict \
                 and'FORT_DETAILS' in response_dict['responses'] \
                 and 'name' in response_dict['responses']['FORT_DETAILS']:
@@ -56,12 +56,12 @@ class SeenFortWorker(object):
         logger.log('[#] Now at Pokestop: ' + fort_name + ' - Spinning...',
                    'yellow')
         sleep(2)
-        self.api.fort_search(fort_id=self.fort['id'],
-                             fort_latitude=lat,
-                             fort_longitude=lng,
-                             player_latitude=f2i(self.position[0]),
-                             player_longitude=f2i(self.position[1]))
-        response_dict = self.api.call()
+        response_dict = self.api.fort_search(fort_id=self.fort['id'],
+                                             fort_latitude=lat,
+                                             fort_longitude=lng,
+                                             player_latitude=f2i(self.position[0]),
+                                             player_longitude=f2i(self.position[1]))
+        #response_dict = self.api.call()
         if 'responses' in response_dict and \
                 'FORT_SEARCH' in response_dict['responses']:
 

@@ -57,8 +57,8 @@ class IncubateEggsWorker(object):
                     continue
                 if self.bot.config.debug:
                     logger.log('[x] Attempting to apply incubator {} to egg {}'.format(incubator['id'], egg['id']))
-                self.bot.api.use_item_egg_incubator(item_id=incubator["id"], pokemon_id=egg["id"])
-                ret = self.bot.api.call()
+                ret = self.bot.api.use_item_egg_incubator(item_id=incubator["id"], pokemon_id=egg["id"])
+                #ret = self.bot.api.call()
                 if ret:
                     code = ret.get("responses", {}).get("USE_ITEM_EGG_INCUBATOR", {}).get("result", 0)
                     if code == 1:
@@ -139,8 +139,8 @@ class IncubateEggsWorker(object):
         return matched_pokemon
 
     def _hatch_eggs(self):
-        self.bot.api.get_hatched_eggs()
-        response_dict = self.bot.api.call()
+        response_dict = self.bot.api.get_hatched_eggs()
+        #response_dict = self.bot.api.call()
         log_color = 'green'
         # logger.log("[ZP] hatch eggs : {}".format(response_dict))
         # [ZP] hatch eggs : {'responses': {'GET_HATCHED_EGGS': {'success': True}}, 'status_code': 1, 'auth_ticket': {'expire_timestamp_ms': 1470046182758L, 'start': '9R5Iu/SArPadTn+U73KfCpM3ViIskNi55W4nd8Np+6U7ciiWWdjTWZHBGlm0DbdPGE7+0jE2qTx+4U7gApslNw==', 'end': 'dtJsnVaR2FCJW5aUQhDphA=='}, 'request_id': 8145806132888207460L}

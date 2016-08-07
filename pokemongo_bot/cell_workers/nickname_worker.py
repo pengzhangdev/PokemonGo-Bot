@@ -61,8 +61,8 @@ class NicknamePokemon(object):
             logger.log("Nickname {} too long".format(new_name))
             return
 
-        self.bot.api.nickname_pokemon(pokemon_id=instance_id,nickname=new_name)
-        response = self.bot.api.call()
+        response = self.bot.api.nickname_pokemon(pokemon_id=instance_id,nickname=new_name)
+        #response = self.bot.api.call()
         sleep(1.2)
         try:
             #logger.log("response {}".format(response))

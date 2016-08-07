@@ -11,8 +11,8 @@ class EvolveAllWorker(object):
         # self.position = bot.position
 
     def work(self):
-        self.api.get_inventory()
-        response_dict = self.api.call()
+        response_dict = self.api.get_inventory()
+        #response_dict = self.api.call()
         cache = {}
 
         try:
@@ -48,8 +48,8 @@ class EvolveAllWorker(object):
                 self._release_evolved(release_cand_list_ids)
 
     def _release_evolved(self, release_cand_list_ids):
-        self.api.get_inventory()
-        response_dict = self.api.call()
+        response_dict = self.api.get_inventory()
+        #response_dict = self.api.call()
         cache = {}
 
         try:
@@ -107,8 +107,8 @@ class EvolveAllWorker(object):
         if pokemon_name in cache:
             return
 
-        self.api.evolve_pokemon(pokemon_id=pokemon_id)
-        response_dict = self.api.call()
+        response_dict = self.api.evolve_pokemon(pokemon_id=pokemon_id)
+        #response_dict = self.api.call()
         status = response_dict['responses']['EVOLVE_POKEMON']['result']
         if status == 1:
             print('[#] Successfully evolved {} with {} cp!'.format(
@@ -121,12 +121,12 @@ class EvolveAllWorker(object):
 
     # TODO: move to utils. These methods are shared with other workers.
     def transfer_pokemon(self, pid):
-        self.api.release_pokemon(pokemon_id=pid)
-        response_dict = self.api.call()
+        response_dict = self.api.release_pokemon(pokemon_id=pid)
+        #response_dict = self.api.call()
 
     def count_pokemon_inventory(self):
-        self.api.get_inventory()
-        response_dict = self.api.call()
+        response_dict = self.api.get_inventory()
+        #response_dict = self.api.call()
         id_list = []
         return self.counting_pokemon(response_dict, id_list)
 

@@ -129,8 +129,8 @@ class PokemonTransferWorker(object):
 
     def _release_pokemon_get_groups(self):
         pokemon_groups = {}
-        self.api.get_player().get_inventory()
-        inventory_req = self.api.call()
+        inventory_req = self.api.get_inventory()
+        #inventory_req = self.api.call()
 
         if inventory_req.get('responses', False) is False:
             return pokemon_groups
@@ -225,8 +225,8 @@ class PokemonTransferWorker(object):
         logger.log('Exchanging {} [CP {}] [Potential {}] for candy!'.format(pokemon_name,
                                                                             cp,
                                                                             iv), 'green')
-        self.api.release_pokemon(pokemon_id=pokemon_id)
-        response_dict = self.api.call()
+        response_dict = self.api.release_pokemon(pokemon_id=pokemon_id)
+        #response_dict = self.api.call()
         action_delay(1, 4)
 
     def _get_release_config_for(self, pokemon):

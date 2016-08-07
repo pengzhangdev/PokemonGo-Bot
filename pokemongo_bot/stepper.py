@@ -97,12 +97,12 @@ class Stepper(object):
     def _work_at_position(self, lat, lng, alt, pokemon_only=False):
         cellid = self._get_cellid(lat, lng)
         timestamp = [0, ] * len(cellid)
-        self.api.get_map_objects(latitude=f2i(lat),
-                                 longitude=f2i(lng),
-                                 since_timestamp_ms=timestamp,
-                                 cell_id=cellid)
+        response_dict = self.api.get_map_objects(latitude=f2i(lat),
+                                                 longitude=f2i(lng),
+                                                 since_timestamp_ms=timestamp,
+                                                 cell_id=cellid)
 
-        response_dict = self.api.call()
+        #response_dict = self.api.call()
         # pprint.pprint(response_dict)
         # Passing Variables through a file
         if response_dict and 'responses' in response_dict:
