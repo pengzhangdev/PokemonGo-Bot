@@ -114,3 +114,7 @@ data/catch-ignore.yml
 release_config.json
 web/userdata.js
 location.json
+
+# encryption library
+encrypt.*
+libencrypt.*

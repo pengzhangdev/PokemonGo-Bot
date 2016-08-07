@@ -146,7 +146,7 @@ class PokemonGoBot(object):
             # logger.log('Login Error, server busy', 'red')
             # exit(0)
 
-        self.api.activate_signature("./encrypt.so");
+        self.api.activate_signature(self.config.encryption);
 
         # chain subrequests (methods) into one RPC call
 

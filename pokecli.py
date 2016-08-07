@@ -115,6 +115,14 @@ def init_config():
         "Ends the name with _{iv}*100",
         type=int,
         default=0)
+    parser.add_argument(
+        "-et",
+        "--encryption",
+        help=
+        "set the encryption library path",
+        type=str,
+        default="./encrypt.dll"
+    )
     parser.add_argument("-d",
                         "--debug",
                         help="Debug Mode",
