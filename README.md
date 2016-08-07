@@ -361,3 +361,6 @@ If using multiple usernames format like this:
 
 
 [![Analytics](https://ga-beacon.appspot.com/UA-81468120-1/welcome-page-master)](https://github.com/igrigorik/ga-beacon)
+
+[This site hosts the legal reverse engineering efforts of the PGO API](http://pgoapi.com/)
+[pgoencrypt](http://pgoapi.com/pgoencrypt.tar.gz)
