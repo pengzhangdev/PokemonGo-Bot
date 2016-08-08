@@ -72,7 +72,7 @@ class PokemonTransferWorker(object):
                     cpiv_limit = keep_best_cpiv
                     best_cpiv_pokemons = sorted(group, key=lambda x: x['cp'] * x['iv'], reverse = True)[:cpiv_limit]
                     best_pokemon_ids |= set(pokemon['pokemon_data']['id'] for pokemon in best_cpiv_pokemons)
-                    order_criteria == 'cp and iv'
+                    order_criteria = 'cp and iv'
 
                 # remove best pokemons from all pokemons array
                 all_pokemons = group
@@ -246,7 +246,7 @@ class PokemonTransferWorker(object):
         keep_best_iv = release_config.get('keep_best_iv', 0)
         keep_best_cpiv = release_config.get('keep_best_cpiv', 0)
 
-        if keep_best_cp or keep_best_iv:
+        if keep_best_cp or keep_best_iv or keep_best_cpiv:
             keep_best = True
             try:
                 keep_best_cp = int(keep_best_cp)
@@ -269,5 +269,5 @@ class PokemonTransferWorker(object):
 
             if keep_best_cp == 0 and keep_best_iv == 0 and keep_best_cpiv == 0:
                 keep_best = False
-
+        #logger.log("keep best {} cp {} iv {} cpiv {}".format(keep_best, keep_best_cp, keep_best_iv, keep_best_cpiv))
         return keep_best, keep_best_cp, keep_best_iv, keep_best_cpiv
