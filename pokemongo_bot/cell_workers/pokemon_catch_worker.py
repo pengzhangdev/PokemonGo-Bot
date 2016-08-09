@@ -105,7 +105,7 @@ class PokemonCatchWorker(object):
                             # 3. The IV of pm > 0.8 and berries_count > 0
                             # 4. The CP of pm > 2000 and berries_count > 0
                             if (catch_rate[pokeball] < 0.45 and items_stock[pokeball+1]+30 < berries_count) \
-                               or (catch_failed and berries_count > 30) \
+                               or (catch_failed and berries_count > 30 and pokemon_potential >= 0.4) \
                                or (pokemon_potential >= 0.8 and berries_count > 0) \
                                or (cp >= 1600 and berries_count > 0):
                                 success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
@@ -135,9 +135,15 @@ class PokemonCatchWorker(object):
                                     pokeball = 0 # player doesn't have any of pokeballs, great balls or ultra balls
 
                             while(pokeball < 3):
-                                if catch_rate[pokeball-1] < 0.35 and items_stock[pokeball+1] > 0:
+                                if pokemon_potential >= 0.4 and catch_rate[pokeball-1] < 0.35 and items_stock[pokeball+1] > 0:
                                     # if current ball chance to catch is under 35%, and player has better ball - then use it
                                     pokeball = pokeball+1 # use better ball
+                                else:
+                                    break
+
+                            while (pokeball < 3):
+                                if pokemon_potential >= 0.8 and catch_rate[pokeball-1] < 0.6 and items_stock[pokeball+1] > 0:
+                                    pokeball = pokeball+1
                                 else:
                                     break
 
