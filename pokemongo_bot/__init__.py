@@ -26,6 +26,7 @@ class PokemonGoBot(object):
         self.pokemon_list = json.load(open('data/pokemon.json'))
         self.item_list = json.load(open('data/items.json'))
         self.latest_inventory = None
+        self.MAX_DISTANCE_FORT_IS_REACHABLE = 40
 
     def start(self):
         self._setup_logging()
@@ -54,7 +55,7 @@ class PokemonGoBot(object):
             # build graph & A* it
             cell['catchable_pokemons'].sort(
                 key=
-                lambda x: distance(self.position[0], self.position[1], x['latitude'], x['longitude']))
+                lambda x: distance(position[0], position[1], x['latitude'], x['longitude']))
 
             user_web_catchable = 'web/catchable-%s.json' % (self.config.username)
             for pokemon in cell['catchable_pokemons']:
@@ -72,10 +73,20 @@ class PokemonGoBot(object):
             # build graph & A* it
             cell['wild_pokemons'].sort(
                 key=
-                lambda x: distance(self.position[0], self.position[1], x['latitude'], x['longitude']))
+                lambda x: distance(position[0], position[1], x['latitude'], x['longitude']))
             for pokemon in cell['wild_pokemons']:
                 if self.catch_pokemon(pokemon) == PokemonCatchWorker.NO_POKEBALLS:
                     break
+
+        if (self.config.mode == 'all' or self.config.mode == 'poke'
+        ) and 'ports' in cell :
+            pokemons = self.get_lured_pokemon(cell, position)
+            if len(pokemons) > 0:
+                logger.log('[#] Some lured pokemon nearby!')
+            for pokemon in pokemons:
+                if self.catch_pokemon(pokemon) == PokemonCatchWorker.NO_POKEBALLS:
+                    break
+
         if (self.config.mode == "all" or
                 self.config.mode == "farm") and include_fort_on_path:
             if 'forts' in cell:
@@ -87,8 +98,8 @@ class PokemonGoBot(object):
 
                 # Sort all by distance from current pos- eventually this should
                 # build graph & A* it
-                forts.sort(key=lambda x: distance(self.position[
-                           0], self.position[1], x['latitude'], x['longitude']))
+                forts.sort(key=lambda x: distance(position[
+                           0], position[1], x['latitude'], x['longitude']))
                 for fort in forts:
                     worker = MoveToFortWorker(fort, self)
                     worker.work()
@@ -258,6 +269,55 @@ class PokemonGoBot(object):
                                 continue
                             self.inventory.append(item['inventory_item_data'][
                                 'item'])
+
+    def get_lured_pokemon(self, cell, position):
+        forts_in_range = []
+        pokemon_to_catch = []
+        forts = [fort
+                 for fort in cell['forts']
+                 if 'latitude' in fort and 'type' in fort ]
+        forts.sort(key=lambda x: distance(
+            position[0],
+            position[1],
+            x['latitude'],
+            x['longitude']
+        ))
+
+        if len(forts) == 0:
+            return []
+
+        for fort in forts:
+            distance_to_fort = distance(
+                position[0],
+                position[1],
+                fort['latitude'],
+                fort['longitude']
+            )
+
+            encounter_id = fort.get('lure_info', {}).get('encounter_id', None)
+            if distance_to_fort < self.MAX_DISTANCE_FORT_IS_REACHABLE and encounter_id:
+                forts_in_range.append(fort)
+                result = {
+                    'encounter_id': encounter_id,
+                    'fort_id': fort['id'],
+                    'latitude': fort['latitude'],
+                    'longitude': fort['longitude']
+                }
+
+                pokemon_to_catch.append(result)
+            else:
+                logger.log("[-] lured pokemon is too far ({},{})".format(fort['latitude'], fort['longitude']))
+
+            if distance_to_fort >= self.MAX_DISTANCE_FORT_IS_REACHABLE:
+                break;
+
+        if len(pokemon_to_catch) > 0:
+            user_web_lured = 'web/lured-pokemon-%s.json' % (self.config.username)
+            for pokemon in pokemon_to_catch:
+                with open(user_web_lured, 'w') as outfile:
+                    json.dump(pokemon, outfile)
+
+        return pokemon_to_catch
 
     def current_inventory(self):
         inventory_req = self.api.get_inventory()
