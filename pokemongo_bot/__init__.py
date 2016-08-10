@@ -87,6 +87,19 @@ class PokemonGoBot(object):
                 if self.catch_pokemon(pokemon) == PokemonCatchWorker.NO_POKEBALLS:
                     break
 
+        if (self.config.mode == 'poke') and 'forts' in cell:
+            forts = [fort
+                     for fort in cell['forts']
+                     if 'latitude' in fort and 'type' in fort]
+            gyms = [gym for gym in cell['forts'] if 'gym_points' in gym]
+            # Sort all by distance from current pos- eventually this should
+            # build graph & A* it
+            forts.sort(key=lambda x: distance(position[
+                0], position[1], x['latitude'], x['longitude']))
+            for fort in forts:
+                worker = MoveToFortWorker(fort, self)
+                worker.work()
+
         if (self.config.mode == "all" or
                 self.config.mode == "farm") and include_fort_on_path:
             if 'forts' in cell:
