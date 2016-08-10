@@ -18,6 +18,7 @@ from stepper import Stepper
 from geopy.geocoders import GoogleV3
 from math import radians, sqrt, sin, cos, atan2
 from item_list import Item
+from math import ceil
 
 
 class PokemonGoBot(object):
@@ -27,7 +28,8 @@ class PokemonGoBot(object):
         self.item_list = json.load(open('data/items.json'))
         self.latest_inventory = None
         self.MAX_DISTANCE_FORT_IS_REACHABLE = 40
-        self.last_forts = []
+        self.last_forts = [None] * 10
+        self.team = 0         # 0: UNSET; 1: RED; 2. BLUE; 3. YELLOW
 
     def start(self):
         self._setup_logging()
@@ -37,6 +39,91 @@ class PokemonGoBot(object):
 
     def take_step(self):
         self.stepper.take_step()
+
+    def __get_cellid(self, lat, long, radius=10):
+        origin = CellId.from_lat_lng(LatLng.from_degrees(lat, long)).parent(15)
+        walk = [origin.id()]
+
+        # 10 before and 10 after
+        next = origin.next()
+        prev = origin.prev()
+        for i in range(radius):
+            walk.append(prev.id())
+            walk.append(next.id())
+            next = next.next()
+            prev = prev.prev()
+        return sorted(walk)
+
+    def get_map_objects(self, lat, lng, alt):
+        map_cells = []
+        cellid= self.__get_cellid(lat, lng)
+        timestamp = [0, ] * len(cellid)
+        response_dict = self.api.get_map_objects(latitude=f2i(lat),
+                                                 longitude=f2i(lng),
+                                                 since_timestamp_ms=timestamp,
+                                                 cell_id=cellid)
+
+        if response_dict and 'responses' in response_dict:
+            if 'GET_MAP_OBJECTS' in response_dict['responses']:
+                if 'map_cells' in response_dict['responses'][
+                        'GET_MAP_OBJECTS']:
+                    user_web_location = 'web/location-%s.json' % (self.config.username)
+                    if os.path.isfile(user_web_location):
+                        with open(user_web_location, 'w') as outfile:
+                            json.dump(
+                                {'lat': lat,
+                                'lng': lng,
+                                'cells': response_dict[
+                                    'responses']['GET_MAP_OBJECTS']['map_cells']},
+                                outfile)
+
+                    user_data_lastlocation = 'data/last-location-%s.json' % (self.config.username)
+                    if os.path.isfile(user_data_lastlocation):
+                        with open(user_data_lastlocation, 'w') as outfile:
+                            outfile.truncate()
+                            json.dump({'lat': lat, 'lng': lng}, outfile)
+
+        if response_dict and 'responses' in response_dict:
+            if 'GET_MAP_OBJECTS' in response_dict['responses']:
+                if 'status' in response_dict['responses']['GET_MAP_OBJECTS']:
+                    if response_dict['responses']['GET_MAP_OBJECTS'][
+                            'status'] is 1:
+                        map_cells = response_dict['responses'][
+                            'GET_MAP_OBJECTS']['map_cells']
+                        position = (lat, lng, alt)
+                    # Sort all by distance from current pos- eventually this should build graph & A* it
+                    # print(map_cells)
+                    #print( s2sphere.from_token(x['s2_cell_id']) )
+                    map_cells.sort(key=lambda x: distance(lat, lng, x['forts'][0]['latitude'], x[
+                                   'forts'][0]['longitude']) if 'forts' in x and x['forts'] != [] else 1e6)
+        forts = []
+        wild_pokemons = []
+        catchable_pokemons = []
+        for cell in map_cells:
+            if "forts" in cell and len(cell["forts"]):
+                forts += cell["forts"]
+            if "wild_pokemons" in cell and len(cell["wild_pokemons"]):
+                wild_pokemons += cell["wild_pokemons"]
+            if "catchable_pokemons" in cell and len(cell["catchable_pokemons"]):
+                catchable_pokemons += cell["catchable_pokemons"]
+        return {
+            "forts": forts,
+            "wild_pokemons": wild_pokemons,
+            "catchable_pokemons": catchable_pokemons
+        }
+
+    def __get_nearest_fort(self, forts):
+        position = [self.api._position_lat, self.api._position_lng, 0]
+        fort = None
+        forts_rest = []
+        dist = None
+
+        forts.sort(key=lambda x: distance(position[0], position[1], x['latitude'], x['longitude']))
+        if len(forts) > 1 :
+            forts_rest = forts[1:]
+        fort = forts[0]
+        dist = distance(position[0], position[1], fort['latitude'], fort['longitude'])
+        return fort, forts_rest, dist
 
     def work_on_cell(self, cell, position, include_fort_on_path, wander):
         if self.config.evolve_all:
@@ -101,13 +188,14 @@ class PokemonGoBot(object):
             if len(lure_forts) > 0:
                 forts = lure_forts;
 
-            forts.sort(key=lambda x: distance(position[
-                0], position[1], x['latitude'], x['longitude']))
-            for fort in forts:
+            # forts.sort(key=lambda x: distance(position[
+            #     0], position[1], x['latitude'], x['longitude']))
+            # for fort in forts:
+            forts_tmp = forts
+            while len(forts_tmp) > 0:
+                fort, forts_tmp, dist = self.__get_nearest_fort(forts_tmp)
                 worker = MoveToFortWorker(fort, self)
                 worker.work()
-
-            self.last_forts = forts
 
         if (self.config.mode == "all" or
                 self.config.mode == "farm") and include_fort_on_path:
@@ -115,14 +203,18 @@ class PokemonGoBot(object):
                 # Only include those with a lat/long
                 forts = [fort
                          for fort in cell['forts']
-                         if 'latitude' in fort and 'type' in fort]
+                         if 'latitude' in fort and 'type' in fort and fort not in self.last_forts]
                 gyms = [gym for gym in cell['forts'] if 'gym_points' in gym]
 
                 # Sort all by distance from current pos- eventually this should
                 # build graph & A* it
-                forts.sort(key=lambda x: distance(position[
-                           0], position[1], x['latitude'], x['longitude']))
-                for fort in forts:
+                # forts.sort(key=lambda x: distance(position[
+                #            0], position[1], x['latitude'], x['longitude']))
+                # for fort in forts:
+                forts_tmp = filter(lambda x: x["id"] not in self.last_forts, forts)
+                break_loop = -5
+                while len(forts_tmp) > 0:
+                    fort, forts_tmp, dist = self.__get_nearest_fort(forts_tmp)
                     worker = MoveToFortWorker(fort, self)
                     worker.work()
 
@@ -135,9 +227,14 @@ class PokemonGoBot(object):
                     # check level
                     worker = CollectLevelUpReward(self)
                     worker.work()
+                    # avoid circle
+                    self.last_forts = self.last_forts[1:] + [fort["id"]]
                     if hack_chain > 10:
                         #print('need a rest')
                         break
+                    if break_loop > 0 and dist > 1000:
+                        break
+                    break_loop += 1
 
     def _setup_logging(self):
         self.log = logging.getLogger(__name__)
@@ -209,6 +306,7 @@ class PokemonGoBot(object):
 
         logger.log('[#] Username: {username}'.format(**player))
         logger.log('[#] Acccount Creation: {}'.format(creation_date))
+        logger.log('[#] Team : {}'.format(player['team']))
         logger.log('[#] Bag Storage: {}/{}'.format(
             self.get_inventory_count('item'), player['max_item_storage']))
         logger.log('[#] Pokemon Storage: {}/{}'.format(
@@ -220,6 +318,7 @@ class PokemonGoBot(object):
         logger.log('[#] GreatBalls: ' + str(items_stock[2]))
         logger.log('[#] UltraBalls: ' + str(items_stock[3]))
 
+        self.team = player['team']
         self.get_player_info()
 
         # if self.config.initial_transfer:
