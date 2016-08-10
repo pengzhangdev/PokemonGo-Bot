@@ -74,18 +74,25 @@ class Stepper(object):
         if steps != 0:
             dLat = (lat - self.api._position_lat) / steps
             dLng = (lng - self.api._position_lng) / steps
-
+            last_pos_lat = self.api._position_lat
+            last_pos_lng = self.api._position_lng
             for i in range(intSteps):
                 cLat = self.api._position_lat + \
                     dLat + random_lat_long_delta()
                 cLng = self.api._position_lng + \
                     dLng + random_lat_long_delta()
+                delta_distance = distance(last_pos_lat, last_pos_lng, cLat, cLng)
                 self.api.set_position(cLat, cLng, alt)
                 self.bot.heartbeat()
                 sleep(1)  # sleep one second plus a random delta
                 #if i != intSteps - 1 and i % 3 != 0:
                 #    continue;
+                #logger.log('[#] Walking {} m'.format(delta_distance))
+                if delta_distance < self.bot.MAX_DISTANCE_FORT_IS_REACHABLE / 7:
+                    continue
 
+                last_pos_lat = self.api._position_lat
+                last_pos_lng = self.api._position_lng
                 self._work_at_position(
                     self.api._position_lat, self.api._position_lng,
                 alt, False)
