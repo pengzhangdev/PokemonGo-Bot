@@ -27,6 +27,7 @@ class PokemonGoBot(object):
         self.item_list = json.load(open('data/items.json'))
         self.latest_inventory = None
         self.MAX_DISTANCE_FORT_IS_REACHABLE = 40
+        self.last_forts = []
 
     def start(self):
         self._setup_logging()
@@ -37,7 +38,7 @@ class PokemonGoBot(object):
     def take_step(self):
         self.stepper.take_step()
 
-    def work_on_cell(self, cell, position, include_fort_on_path):
+    def work_on_cell(self, cell, position, include_fort_on_path, wander):
         if self.config.evolve_all:
             # Run evolve all once. Flip the bit.
             print('[#] Attempting to evolve all pokemons ...')
@@ -79,7 +80,7 @@ class PokemonGoBot(object):
                     break
 
         if (self.config.mode == 'all' or self.config.mode == 'poke'
-        ) and 'ports' in cell :
+        ) and 'ports' in cell:
             pokemons = self.get_lured_pokemon(cell, position)
             if len(pokemons) > 0:
                 logger.log('[#] Some lured pokemon nearby!')
@@ -87,18 +88,26 @@ class PokemonGoBot(object):
                 if self.catch_pokemon(pokemon) == PokemonCatchWorker.NO_POKEBALLS:
                     break
 
-        if (self.config.mode == 'poke') and 'forts' in cell:
+        if (self.config.mode == 'poke') and 'forts' in cell and wander:
             forts = [fort
                      for fort in cell['forts']
-                     if 'latitude' in fort and 'type' in fort]
+                     if 'latitude' in fort and 'type' in fort and fort not in self.last_forts]
+            lure_forts = [fort
+                          for fort in cell['forts']
+                          if 'lure_info' in fort and fort not in self.last_forts]
             gyms = [gym for gym in cell['forts'] if 'gym_points' in gym]
             # Sort all by distance from current pos- eventually this should
             # build graph & A* it
+            if len(lure_forts) > 0:
+                forts = lure_forts;
+
             forts.sort(key=lambda x: distance(position[
                 0], position[1], x['latitude'], x['longitude']))
             for fort in forts:
                 worker = MoveToFortWorker(fort, self)
                 worker.work()
+
+            self.last_forts = forts
 
         if (self.config.mode == "all" or
                 self.config.mode == "farm") and include_fort_on_path:

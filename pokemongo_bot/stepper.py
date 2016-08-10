@@ -59,8 +59,8 @@ class Stepper(object):
 
             (self.x, self.y) = (self.x + self.dx, self.y + self.dy)
 
-            self._work_at_position(position[0], position[1], position[2], True)
-            sleep(10)
+            self._work_at_position(position[0], position[1], position[2], True, True)
+            sleep(5)
 
     def _walk_to(self, speed, lat, lng, alt):
         dist = distance(
@@ -101,7 +101,7 @@ class Stepper(object):
             self.bot.heartbeat()
             logger.log("[#] Finished walking")
 
-    def _work_at_position(self, lat, lng, alt, pokemon_only=False):
+    def _work_at_position(self, lat, lng, alt, pokemon_only=False, wander=False):
         cellid = self._get_cellid(lat, lng)
         timestamp = [0, ] * len(cellid)
         response_dict = self.api.get_map_objects(latitude=f2i(lat),
@@ -146,7 +146,7 @@ class Stepper(object):
                     map_cells.sort(key=lambda x: distance(lat, lng, x['forts'][0]['latitude'], x[
                                    'forts'][0]['longitude']) if 'forts' in x and x['forts'] != [] else 1e6)
                     for cell in map_cells:
-                        self.bot.work_on_cell(cell, position, pokemon_only)
+                        self.bot.work_on_cell(cell, position, pokemon_only, wander)
 
     def _get_cellid(self, lat, long, radius=10):
         origin = CellId.from_lat_lng(LatLng.from_degrees(lat, long)).parent(15)
