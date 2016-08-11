@@ -35,7 +35,7 @@ class NicknamePokemon(object):
             logger.log("Pokemon instance id returned 0. Can't rename.",'red')
             return
         id = pokemon.get('pokemon_id',0)-1
-        name = pokemon.get('nickname', "") #self.bot.pokemon_list[id]['Name']
+        name = ""#pokemon.get('nickname', "") #self.bot.pokemon_list[id]['Name']
         cp = pokemon.get('cp',0)
         iv_attack = pokemon.get('individual_attack',0)
         iv_defense = pokemon.get('individual_defense',0)
