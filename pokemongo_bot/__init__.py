@@ -264,8 +264,9 @@ class PokemonGoBot(object):
                     self.last_forts = self.last_forts[1:] + [fort["id"]]
                     if hack_chain > 10:
                         #print('need a rest')
-                        time.sleep(5)
-                        continue
+                        #time.sleep(5)
+                        # Maybe we are in circle, just take_step to move randomly
+                        break
 
     def _setup_logging(self):
         self.log = logging.getLogger(__name__)
