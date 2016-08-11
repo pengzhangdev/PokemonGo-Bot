@@ -44,6 +44,7 @@ class PokemonGoBot(object):
         self.MAX_DISTANCE_FORT_IS_REACHABLE = 40
         self.last_forts = [None] * 6
         self.team = 0         # 0: UNSET; 1: RED; 2. BLUE; 3. YELLOW
+        self.last_cell_forts = None
 
     def start(self):
         self._setup_logging()
@@ -120,6 +121,15 @@ class PokemonGoBot(object):
                 wild_pokemons += cell["wild_pokemons"]
             if "catchable_pokemons" in cell and len(cell["catchable_pokemons"]):
                 catchable_pokemons += cell["catchable_pokemons"]
+        if len(forts) == 0 and self.last_cell_forts != None:
+            return {
+                "forts": self.last_cell_forts,
+                "wild_pokemons": wild_pokemons,
+                "catchable_pokemons": catchable_pokemons
+            }
+
+        self.last_cell_forts = forts
+
         return {
             "forts": forts,
             "wild_pokemons": wild_pokemons,
@@ -196,7 +206,7 @@ class PokemonGoBot(object):
             lure_forts = [fort
                           for fort in cell['forts']
                           if 'lure_info' in fort]
-            logger.log("lure forts: {}".format(lure_forts))
+            logger.log("[#] Wander forts num {}; lure forts: {}".format(len(forts), lure_forts))
             gyms = [gym for gym in cell['forts'] if 'gym_points' in gym]
             # Sort all by distance from current pos- eventually this should
             # build graph & A* it
