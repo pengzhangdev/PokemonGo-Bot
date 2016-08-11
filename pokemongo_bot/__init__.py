@@ -137,6 +137,7 @@ class PokemonGoBot(object):
         }
 
     def __get_nearest_lure_fort(self):
+        position = (self.api._position_lat, self.api._position_lng, 0)
         fort = None
         forts_rest = []
         dist = None
