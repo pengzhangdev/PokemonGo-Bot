@@ -321,7 +321,7 @@ class PokemonGoBot(object):
 
         logger.log('[#] Username: {username}'.format(**player))
         logger.log('[#] Acccount Creation: {}'.format(creation_date))
-        logger.log('[#] Team : {}'.format(player['team']))
+        logger.log('[#] Team : {}'.format(player.get('team', 0)))
         logger.log('[#] Bag Storage: {}/{}'.format(
             self.get_inventory_count('item'), player['max_item_storage']))
         logger.log('[#] Pokemon Storage: {}/{}'.format(
@@ -333,7 +333,7 @@ class PokemonGoBot(object):
         logger.log('[#] GreatBalls: ' + str(items_stock[2]))
         logger.log('[#] UltraBalls: ' + str(items_stock[3]))
 
-        self.team = player['team']
+        self.team = player.get('team', 0)
         self.get_player_info()
 
         # if self.config.initial_transfer:
