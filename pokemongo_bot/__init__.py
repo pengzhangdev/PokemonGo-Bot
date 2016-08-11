@@ -42,7 +42,7 @@ class PokemonGoBot(object):
         self.item_list = json.load(open('data/items.json'))
         self.latest_inventory = None
         self.MAX_DISTANCE_FORT_IS_REACHABLE = 40
-        self.last_forts = [None] * 10
+        self.last_forts = [None] * 6
         self.team = 0         # 0: UNSET; 1: RED; 2. BLUE; 3. YELLOW
 
     def start(self):
