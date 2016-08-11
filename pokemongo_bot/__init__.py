@@ -192,16 +192,16 @@ class PokemonGoBot(object):
         if (self.config.mode == 'poke') and 'forts' in cell and wander:
             forts = [fort
                      for fort in cell['forts']
-                     if 'latitude' in fort and 'type' in fort and fort not in self.last_forts]
+                     if 'latitude' in fort and 'type' in fort]
             lure_forts = [fort
                           for fort in cell['forts']
-                          if 'lure_info' in fort and fort not in self.last_forts]
+                          if 'lure_info' in fort]
             logger.log("lure forts: {}".format(lure_forts))
             gyms = [gym for gym in cell['forts'] if 'gym_points' in gym]
             # Sort all by distance from current pos- eventually this should
             # build graph & A* it
             if len(lure_forts) > 0:
-                forts = lure_forts;
+                forts = lure_forts + forts;
 
             # forts.sort(key=lambda x: distance(position[
             #     0], position[1], x['latitude'], x['longitude']))
