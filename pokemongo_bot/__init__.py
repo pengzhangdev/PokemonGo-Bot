@@ -42,11 +42,9 @@ class PokemonGoBot(object):
         self.item_list = json.load(open('data/items.json'))
         self.latest_inventory = None
         self.MAX_DISTANCE_FORT_IS_REACHABLE = 40
-        self.last_forts = [None] * 6
+        self.last_forts = [None] * 5
         self.team = 0         # 0: UNSET; 1: RED; 2. BLUE; 3. YELLOW
         self.last_cell_forts = None
-        self.wander_lure_fort = []
-        self.wander_lure_fort_id = []
 
     def start(self):
         self._setup_logging()
@@ -138,7 +136,29 @@ class PokemonGoBot(object):
             "catchable_pokemons": catchable_pokemons
         }
 
-    def __get_nearest_fort(self, forts):
+    def __get_nearest_lure_fort(self):
+        fort = None
+        forts_rest = []
+        dist = None
+        forts = filter(lambda x: x["id"] not in self.last_forts and 'latitude' in x and 'type' in x, self.last_cell_forts)
+        if len(forts) == 0 or len(self.last_forts) > 10:
+            self.last_forts = [None] * 5
+
+        lure_forts = filter(lambda x: x.get('lure_info', None) != None, forts)
+        if len(lure_forts) == 0:
+            return self.__get_nearest_fort(forts)
+
+        lure_forts.sort(key=lambda x: distance(position[0], position[1], x['latitude'], x['longitude']))
+        if len(lure_forts) > 1 :
+            forts_rest = lure_forts[1:]
+        logger.log("[#] Move to lure fort")
+        fort = lure_forts[0]
+        dist = distance(position[0], position[1], fort['latitude'], fort['longitude'])
+        return fort, forts_rest, dist
+
+    def __get_nearest_fort(self, forts = None):
+        if forts == None:
+            forts = filter(lambda x: x["id"] not in self.last_forts and 'latitude' in x and 'type' in x, self.last_cell_forts)
         position = (self.api._position_lat, self.api._position_lng, 0)
         fort = None
         forts_rest = []
@@ -201,64 +221,32 @@ class PokemonGoBot(object):
                 if self.catch_pokemon(pokemon) == PokemonCatchWorker.NO_POKEBALLS:
                     break
 
-        # get lure forts
-        if 'forts' in cell:
-            lure_forts = [fort
-                          for fort in cell['forts']
-                          if 'lure_info' in fort and fort["id"] not in self.wander_lure_fort_id]
-            if len(lure_forts) > 0:
-                logger.log("[#] Found lure forts {}".format(lure_forts))
-                self.wander_lure_fort += lure_forts
-
-            for fort in lure_forts:
-                self.wander_lure_fort_id += [fort["id"]]
-
         if (self.config.mode == 'poke') and 'forts' in cell and wander:
-            forts = [fort
-                     for fort in cell['forts']
-                     if 'latitude' in fort and 'type' in fort]
-            lure_forts = self.wander_lure_fort
-            self.wander_lure_fort = []
-            self.wander_lure_fort_id = []
 
-            logger.log("[#] Wander forts num {}; lure forts: {}".format(len(forts), lure_forts))
-            gyms = [gym for gym in cell['forts'] if 'gym_points' in gym]
-            # Sort all by distance from current pos- eventually this should
-            # build graph & A* it
-            if len(lure_forts) > 0:
-                forts = lure_forts + forts;
 
             # forts.sort(key=lambda x: distance(position[
             #     0], position[1], x['latitude'], x['longitude']))
             # for fort in forts:
-            for fort in forts:
+            while self.config.mode == 'poke':
+                fort, _, _ = self.__get_nearest_lure_fort()
+                if fort == None:
+                    break
+
                 worker = MoveToFortWorker(fort, self)
                 worker.work()
+                # avoid circle
+                self.last_forts = self.last_forts[1:] + [fort["id"]]
 
         if (self.config.mode == "all" or
                 self.config.mode == "farm") and include_fort_on_path:
             if 'forts' in cell:
-                # Only include those with a lat/long
-                forts = [fort
-                         for fort in cell['forts']
-                         if 'latitude' in fort and 'type' in fort]
-
-                if len(self.wander_lure_fort) > 0:
-                    forts += self.wander_lure_fort
-                    self.wander_lure_fort = []
-                    self.wander_lure_fort_id = []
-
                 gyms = [gym for gym in cell['forts'] if 'gym_points' in gym]
 
-                # Sort all by distance from current pos- eventually this should
-                # build graph & A* it
-                # forts.sort(key=lambda x: distance(position[
-                #            0], position[1], x['latitude'], x['longitude']))
-                # for fort in forts:
-                forts_tmp = filter(lambda x: x["id"] not in self.last_forts, forts)
-                break_loop = -5
-                while len(forts_tmp) > 0:
-                    fort, forts_tmp, dist = self.__get_nearest_fort(forts_tmp)
+                while self.config.mode != 'poke':
+                    fort, _, _ = self.__get_nearest_fort()
+                    if fort == None:
+                        break
+
                     worker = MoveToFortWorker(fort, self)
                     worker.work()
 
@@ -277,9 +265,6 @@ class PokemonGoBot(object):
                         #print('need a rest')
                         time.sleep(5)
                         continue
-                    if break_loop > 0 and dist > 1000:
-                        break
-                    break_loop += 1
 
     def _setup_logging(self):
         self.log = logging.getLogger(__name__)
