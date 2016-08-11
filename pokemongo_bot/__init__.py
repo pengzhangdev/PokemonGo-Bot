@@ -13,12 +13,26 @@ import re
 from pgoapi import PGoApi
 from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker, IncubateEggsWorker, CollectLevelUpReward,NicknamePokemon
 from cell_workers.utils import distance
-from human_behaviour import sleep
 from stepper import Stepper
 from geopy.geocoders import GoogleV3
 from math import radians, sqrt, sin, cos, atan2
 from item_list import Item
 from math import ceil
+from s2sphere import CellId, LatLng
+from pgoapi.utilities import f2i, h2f
+
+import os
+import time
+import pprint
+
+from math import ceil
+from s2sphere import CellId, LatLng
+from google.protobuf.internal import encoder
+
+from human_behaviour import sleep, random_lat_long_delta
+from cell_workers.utils import distance, i2f, format_time
+
+from pgoapi.utilities import f2i, h2f
 
 
 class PokemonGoBot(object):
@@ -113,7 +127,7 @@ class PokemonGoBot(object):
         }
 
     def __get_nearest_fort(self, forts):
-        position = [self.api._position_lat, self.api._position_lng, 0]
+        position = (self.api._position_lat, self.api._position_lng, 0)
         fort = None
         forts_rest = []
         dist = None
@@ -182,6 +196,7 @@ class PokemonGoBot(object):
             lure_forts = [fort
                           for fort in cell['forts']
                           if 'lure_info' in fort and fort not in self.last_forts]
+            logger.log("lure forts: {}".format(lure_forts))
             gyms = [gym for gym in cell['forts'] if 'gym_points' in gym]
             # Sort all by distance from current pos- eventually this should
             # build graph & A* it

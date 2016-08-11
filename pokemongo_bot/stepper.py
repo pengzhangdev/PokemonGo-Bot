@@ -102,7 +102,14 @@ class Stepper(object):
             logger.log("[#] Finished walking")
 
     def _work_at_position(self, lat, lng, alt, pokemon_only=False, wander=False):
+        position = (lat, lng, alt)
         cells = self.bot.get_map_objects(lat, lng, alt);
+
+        user_cells_data = 'data/cells-%s.json' % (self.config.username)
+        if os.path.isfile(user_cells_data):
+            with open(user_cells_data, 'w') as outfile:
+                json.dump(cells, outfile)
+
         self.bot.work_on_cell(cells, position, pokemon_only, wander)
 
     def _encode(self, cellid):
