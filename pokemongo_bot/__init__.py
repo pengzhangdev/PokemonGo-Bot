@@ -246,7 +246,8 @@ class PokemonGoBot(object):
                     self.last_forts = self.last_forts[1:] + [fort["id"]]
                     if hack_chain > 10:
                         #print('need a rest')
-                        break
+                        time.sleep(5)
+                        continue
                     if break_loop > 0 and dist > 1000:
                         break
                     break_loop += 1
