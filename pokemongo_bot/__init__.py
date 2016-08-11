@@ -525,7 +525,7 @@ class PokemonGoBot(object):
             # TODO: Add unit tests
             return
 
-        if self.config.location:
+        if self.config.location and not self.config.location_cache :
             try:
                 location_str = str(self.config.location)
                 location = (self._get_pos_by_name(location_str.replace(" ", "")))
@@ -541,7 +541,7 @@ class PokemonGoBot(object):
                 logger.log('[x] The location given using -l could not be parsed. Checking for a cached location.')
                 pass
 
-        if self.config.location_cache and not self.config.location:
+        if self.config.location_cache: # and not self.config.location:
             try:
                 #
                 # save location flag used to pull the last known location from
