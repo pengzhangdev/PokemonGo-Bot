@@ -11,7 +11,7 @@ import yaml
 import logger
 import re
 from pgoapi import PGoApi
-from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker, IncubateEggsWorker, CollectLevelUpReward,NicknamePokemon
+from cell_workers import PokemonCatchWorker, SeenFortWorker, MoveToFortWorker, InitialTransferWorker, EvolveAllWorker, PokemonTransferWorker, IncubateEggsWorker, CollectLevelUpReward,NicknamePokemon, UpgradeAllWorker
 from cell_workers.utils import distance
 from stepper import Stepper
 from geopy.geocoders import GoogleV3
@@ -390,6 +390,14 @@ class PokemonGoBot(object):
         return_value = worker.work()
 
         return return_value;
+
+    def upgrade_all_pokemon(self):
+        # upgrade pokemon with IV > 0.95
+        if self.config.auto_upgrade:
+            logger.log("[#] start to upgrade pokemon")
+            worker = UpgradeAllWorker(self)
+            worker.work()
+            logger.log("[#] done upgrade pokemon")
 
     def drop_item(self, item_id, count):
         inventory_req = self.api.recycle_inventory_item(item_id=item_id, count=count)

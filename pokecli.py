@@ -116,6 +116,13 @@ def init_config():
         type=int,
         default=0)
     parser.add_argument(
+        "-au",
+        "--auto_upgrade",
+        help=
+        "Auto upgrade the pokemon with IV > 0.95",
+        type=int,
+        default=0)
+    parser.add_argument(
         "-et",
         "--encryption",
         help=

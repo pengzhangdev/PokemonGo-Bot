@@ -19,6 +19,7 @@ class CollectLevelUpReward(object):
         elif self.current_level > CollectLevelUpReward.previous_level:
             logger.log('Level up from {} to {}!'.format(CollectLevelUpReward.previous_level, self.current_level), 'green')
             self._collect_level_reward()
+            self.bot.upgrade_all_pokemon()
 
         CollectLevelUpReward.previous_level = self.current_level
 
