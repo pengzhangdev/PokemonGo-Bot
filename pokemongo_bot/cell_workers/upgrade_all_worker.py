@@ -31,9 +31,13 @@ class UpgradeAllWorker(object):
         else:
             pokemon_data = self.__get_inventory_pokemon(inventory)
             upgrade_list = self.__sort_by_iv(pokemon_data)
+            upgraded_list = []
+
             for pokemon in upgrade_list:
                 if pokemon[3] > 0.95:
-                    self.__upgrade_pokemon(pokemon)
+                    if pokemon[1] not in upgraded_list:
+                        self.__upgrade_pokemon(pokemon)
+                        upgraded_list += [pokemon[1]]
                 else:
                     break;
 
@@ -42,13 +46,15 @@ class UpgradeAllWorker(object):
         pokemon_name = pokemon[1]
         pokemon_cp = pokemon[2]
         pokemon_iv = pokemon[3]
-
+        logged = False
         while True:
             response_dict = self.api.upgrade_pokemon(pokemon_id=pokemon_id)
             #logger.log('[#] {}'.format(response_dict))
             status = response_dict['responses']['UPGRADE_POKEMON']['result']
             if status == 1:
-                logger.log('[#] Successfully upgrade {} with {} IV'.format(pokemon_name, pokemon_iv))
+                if not logged:
+                    logger.log('[#] Successfully upgrade {} with {} IV'.format(pokemon_name, pokemon_iv))
+                    logged = True
             else:
                 break;
             sleep(5.7)
