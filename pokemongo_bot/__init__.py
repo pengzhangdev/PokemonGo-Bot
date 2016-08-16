@@ -532,23 +532,6 @@ class PokemonGoBot(object):
         if self.config.test:
             # TODO: Add unit tests
             return
-
-        if self.config.location and not self.config.location_cache :
-            try:
-                location_str = str(self.config.location)
-                location = (self._get_pos_by_name(location_str.replace(" ", "")))
-                self.position = location
-                self.api.set_position(*self.position)
-                logger.log('')
-                logger.log(u'[x] Address found: {}'.format(self.config.location.decode(
-                    'utf-8')))
-                logger.log('[x] Position in-game set as: {}'.format(self.position))
-                logger.log('')
-                return
-            except:
-                logger.log('[x] The location given using -l could not be parsed. Checking for a cached location.')
-                pass
-
         if self.config.location_cache: # and not self.config.location:
             try:
                 #
@@ -576,7 +559,23 @@ class PokemonGoBot(object):
                     sys.exit(
                         "No cached Location. Please specify initial location.")
                 else:
-                    pass
+                    self.config.location_cache = False
+
+        if self.config.location and not self.config.location_cache :
+            try:
+                location_str = str(self.config.location)
+                location = (self._get_pos_by_name(location_str.replace(" ", "")))
+                self.position = location
+                self.api.set_position(*self.position)
+                logger.log('')
+                logger.log(u'[x] Address found: {}'.format(self.config.location.decode(
+                    'utf-8')))
+                logger.log('[x] Position in-game set as: {}'.format(self.position))
+                logger.log('')
+                return
+            except:
+                logger.log('[x] The location given using -l could not be parsed. Checking for a cached location.')
+                pass
 
     def _get_pos_by_name(self, location_name):
         # Check if the given location is already a coordinate.

@@ -5,6 +5,7 @@ from sets import Set
 from utils import distance
 from pokemongo_bot.human_behaviour import sleep
 from pokemongo_bot import logger
+from random import random
 
 class PokemonCatchWorker(object):
     BAG_FULL = 'bag_full'
@@ -162,8 +163,8 @@ class PokemonCatchWorker(object):
                             items_stock[pokeball] = items_stock[pokeball] - 1
                             success_percentage = '{0:.2f}'.format(catch_rate[pokeball-1]*100)
                             logger.log('[x] Using {} (chance: {}%)... ({} left!)'.format(
-                                self.item_list[str(pokeball)], 
-                                success_percentage, 
+                                self.item_list[str(pokeball)],
+                                success_percentage,
                                 items_stock[pokeball]
                             ))
 
