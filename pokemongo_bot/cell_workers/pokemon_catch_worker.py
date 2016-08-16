@@ -168,13 +168,45 @@ class PokemonCatchWorker(object):
                             ))
 
                             id_list1 = self.count_pokemon_inventory()
+                            catch_throw_parameters = {
+                                "normalized_reticle_size": 1.950,
+                                'spin_modifier': 1.0,
+                                'normalized_hit_position': 1.0,
+                            }
+
+                            if random() < 0.5:
+                                catch_throw_parameters["spin_modifier"] = 0.5 + 0.5 * random()
+                            else :
+                                catch_throw_parameters["spin_modifier"] = 0.499 * random()
+                            # excelent: 0.1
+                            # great: 0.3
+                            # nice: 0.2
+                            # normal: 0.4
+                            # line_excelent: 0.0 - 0.1
+                            # line_great: 0.1-0.4
+                            # line_nice: 0.4-0.6
+                            # line_normal: 0.6-0.8
+                            random_throw = random() * 1.0
+                            if random_throw < 0.1:
+                                catch_throw_parameters['normalized_reticle_size'] = 1.70 + 0.25 * random()
+                                catch_throw_parameters['normalized_hit_position'] = 1.0
+                            if random_throw > 0.1 and random_throw <= 0.4:
+                                catch_throw_parameters['normalized_reticle_size'] = 1.30 + 0.399 * random()
+                                catch_throw_parameters['normalized_hit_position'] = 1.0
+                            if random_throw > 0.4 and random_throw <= 0.6:
+                                catch_throw_parameters['normalized_reticle_size'] = 1.00 + 0.299 * random()
+                                catch_throw_parameters['normalized_hit_position'] = 1.0
+                            if random_throw > 0.6 and random_throw <= 1.0:
+                                catch_throw_parameters['normalized_reticle_size'] = 1.25 + 0.70 * random()
+                                catch_throw_parameters['normalized_hit_position'] = 0.0
+
                             response_dict = self.api.catch_pokemon(encounter_id=encounter_id,
                                                                    pokeball=pokeball,
-                                                                   normalized_reticle_size=1.950,
+                                                                   normalized_reticle_size=catch_throw_parameters['normalized_reticle_size'],
                                                                    spawn_point_id=spawn_point_guid,
                                                                    hit_pokemon=1,
-                                                                   spin_modifier=1,
-                                                                   NormalizedHitPosition=1)
+                                                                   spin_modifier=catch_throw_parameters['spin_modifier'],
+                                                                   NormalizedHitPosition=catch_throw_parameters['normalized_hit_position'])
                             #response_dict = self.api.call()
 
                             if response_dict and \
