@@ -191,15 +191,19 @@ class PokemonCatchWorker(object):
                             if random_throw < 0.1:
                                 catch_throw_parameters['normalized_reticle_size'] = 1.70 + 0.25 * random()
                                 catch_throw_parameters['normalized_hit_position'] = 1.0
+                                logger.log('[#] Throw ball with excelent rewards')
                             if random_throw > 0.1 and random_throw <= 0.4:
                                 catch_throw_parameters['normalized_reticle_size'] = 1.30 + 0.399 * random()
                                 catch_throw_parameters['normalized_hit_position'] = 1.0
+                                logger.log('[#] Throw ball with great rewards')
                             if random_throw > 0.4 and random_throw <= 0.6:
                                 catch_throw_parameters['normalized_reticle_size'] = 1.00 + 0.299 * random()
                                 catch_throw_parameters['normalized_hit_position'] = 1.0
+                                logger.log('[#] Throw ball with nice rewards')
                             if random_throw > 0.6 and random_throw <= 1.0:
                                 catch_throw_parameters['normalized_reticle_size'] = 1.25 + 0.70 * random()
                                 catch_throw_parameters['normalized_hit_position'] = 0.0
+                                logger.log('[#] Throw ball with normal rewards')
 
                             response_dict = self.api.catch_pokemon(encounter_id=encounter_id,
                                                                    pokeball=pokeball,

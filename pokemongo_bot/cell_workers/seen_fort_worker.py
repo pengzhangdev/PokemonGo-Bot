@@ -24,7 +24,7 @@ class SeenFortWorker(object):
         if len(SeenFortWorker.ITEM_LIMITS) == 0:
             for key in self.item_list.keys():
                 count = -1 #self.bot.item_inventory_count(key)
-                limits = 200
+                limits = 300
                 drop = False
                 if key == '101': # Potion
                     limits = 0;
@@ -87,11 +87,13 @@ class SeenFortWorker(object):
 
                     for item_id, item_count in tmp_count_items.iteritems():
                         item_name = self.item_list[str(item_id)]
-
+                        item_total = self.bot.item_inventory_count(item_id)
                         logger.log("[+] " + str(item_count) +
                                     "x " + item_name +
-                                    " (Total: " + str(self.bot.item_inventory_count(item_id)) + ")", 'green')
-                        self.addItemCount(str(item_id), item_count)
+                                    " (Total: " + str(item_total) + ")", 'green')
+
+                        SeenFortWorker.ITEM_LIMITS[str(item_id)][0] = item_total
+                        self.addItemCount(item_id, item_count)
 
                         # RECYCLING UNWANTED ITEMS
                         if SeenFortWorker.ITEM_LIMITS[str(item_id)][2]:  #in self.config.item_filter:
@@ -153,14 +155,30 @@ class SeenFortWorker(object):
         sleep(8)
         return 0
 
-    def addItemCount(self, item_id, item_count):
+    def addItemCount(self, item_id_i, item_count):
+        item_id = str(item_id_i)
         if SeenFortWorker.ITEM_LIMITS[item_id][0] == -1:
             SeenFortWorker.ITEM_LIMITS[item_id][0] = self.bot.item_inventory_count(item_id)
-        if SeenFortWorker.ITEM_LIMITS[item_id][2]:
-            return
-        SeenFortWorker.ITEM_LIMITS[item_id][0] += item_count
+
+        if SeenFortWorker.ITEM_LIMITS[item_id][0] > SeenFortWorker.ITEM_LIMITS[item_id][1] + 10:
+            drop_count = SeenFortWorker.ITEM_LIMITS[item_id][0] - SeenFortWorker.ITEM_LIMITS[item_id][1]
+            response_dict_recycle = self.bot.drop_item(item_id=item_id_i, count=drop_count)
+            if response_dict_recycle and \
+               'responses' in response_dict_recycle and \
+               'RECYCLE_INVENTORY_ITEM' in response_dict_recycle['responses'] and \
+               'result' in response_dict_recycle['responses']['RECYCLE_INVENTORY_ITEM']:
+                result = response_dict_recycle['responses']['RECYCLE_INVENTORY_ITEM']['result']
+            if result is 1:
+                logger.log("[+] Successfully Drop {} count {}".format(item_id, drop_count), 'green')
+                SeenFortWorker.ITEM_LIMITS[item_id][0] -= drop_count
+            else:
+                logger.log("[+] Failed to drop {}!".format(item_id), 'red')
+            time.sleep(2)
+
         if SeenFortWorker.ITEM_LIMITS[item_id][0] > SeenFortWorker.ITEM_LIMITS[item_id][1]:
             SeenFortWorker.ITEM_LIMITS[item_id][2] = True
+        else:
+            SeenFortWorker.ITEM_LIMITS[item_id][2] = False
 
     @staticmethod
     def closest_fort(current_lat, current_long, forts):
