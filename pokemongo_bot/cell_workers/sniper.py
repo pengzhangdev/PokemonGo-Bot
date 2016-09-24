@@ -6,6 +6,8 @@ import requests
 import calendar
 import difflib
 import hashlib
+import Queue
+import threading
 
 from random import uniform
 from operator import itemgetter, methodcaller
@@ -26,19 +28,62 @@ class SniperSource(object):
         self.time_mask = data.get('time_mask', '%Y-%m-%d %H:%M:%S')
         self.mappings = SniperSourceMapping(data.get('mappings', {}))
         self.timeout = data.get('timeout', 5)
+        self.fetch_with_process = False
+        self.fetch_process = None
+        self.msgqueue = Queue.Queue(1)
+        self.condition = threading.Condition()
+        self.queue_get_timeout = 5
 
     def __str__(self):
         return self.url
 
+    def fetch_raw_process(self, q):
+        try:
+            while True:
+                self.condition.acquire()
+                while not q.empty():
+                    self.condition.wait()
+                self.condition.release()
+
+                some_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/52.0.2743.116 Safari/537.36'
+                response = requests.get(self.url, headers={'User-Agent': some_agent})
+                #print("put queue")
+                q.put(response)
+        except:
+            pass
+
     def fetch_raw(self):
-        some_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/52.0.2743.116 Safari/537.36'
-        response = requests.get(self.url, headers={'User-Agent': some_agent}, timeout=self.timeout)
-        results = response.json()
+        results = {}
+        if self.fetch_with_process and self.fetch_process == None:
+            self.fetch_process = threading.Thread(target=self.fetch_raw_process, args=(self.msgqueue,))
+            self.fetch_process.setDaemon(True)
+            self.fetch_process.start()
+
+        if not self.fetch_with_process:
+            some_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/52.0.2743.116 Safari/537.36'
+            response = requests.get(self.url, headers={'User-Agent': some_agent}, timeout=self.timeout)
+            results = response.json()
+        else:
+            self.condition.acquire()
+            self.condition.notify()
+            self.condition.release()
+
+        if self.fetch_process != None:
+            try:
+                #print("before get queue timeout %{}".format(self.queue_get_timeout))
+                response = self.msgqueue.get(timeout=self.queue_get_timeout)
+                results = response.json()
+                #print("get queue")
+            except:
+                # Takes more than self.queue_get_timeout, dont wait, get the data next tick
+                if self.queue_get_timeout > 1:
+                    self.queue_get_timeout -= 1
+                pass
 
         # If the results is a dict, retrieve the list from it by the given key. This will return a list afterall.
         if isinstance(results, dict): 
             results = results.get(self.key, []) 
-            
+
         # If results is STILL a dict (eg. each pokemon is its own dict), need to build data from nested json (example whereispokemon.net)
         while isinstance(results,dict):
             tmpResults = []
@@ -119,7 +164,8 @@ class SniperSource(object):
             if self.enabled:
                 errors = []
                 data = self.fetch_raw()
-                
+                self.fetch_with_process = True
+
                 # Check whether the params really exist if they have been specified like so
                 if data:
                     if self.mappings.iv.exists and self.mappings.iv.param not in data[0]:
@@ -226,7 +272,7 @@ class Sniper(BaseTask):
     SUPPORTED_TASK_API_VERSION = 1
     MIN_SECONDS_ALLOWED_FOR_CELL_CHECK = 10
     MIN_SECONDS_ALLOWED_FOR_REQUESTING_DATA = 5
-    MIN_BALLS_FOR_CATCHING = 10
+    MIN_BALLS_FOR_CATCHING = 50
     MAX_CACHE_LIST_SIZE = 300
 
     def __init__(self, bot, config):
