@@ -402,7 +402,7 @@ class PokemonOptimizer(BaseTask):
 
         may_buddy = rule_buddy not in [False, {}]
         may_buddy &= pokemon.in_fort is False
-        may_buddy &= self.satisfy_requirements(pokemon, may_buddy)
+        may_buddy &= self.satisfy_requirements(pokemon, rule_buddy)
 
 #         self.log("%s %s %s %s %s %s" % (pokemon, tuple(score), keep, may_try_evolve, may_try_upgrade, may_buddy))
 
@@ -911,7 +911,7 @@ class PokemonOptimizer(BaseTask):
             action_delay(self.config_action_wait_min, self.config_action_wait_max)
 
         return True
-        
+
     def _get_buddyid(self):
         if self.buddy and'id' in self.buddy:
             return self.buddy['id']
